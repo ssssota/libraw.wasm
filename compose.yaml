@@ -1,0 +1,7 @@
+services:
+  builder:
+    image: emscripten/emsdk
+    volumes:
+      - .:/src
+      - /src/LibRaw/object
+    command: ["/src/build.sh"]
