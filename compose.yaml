@@ -4,4 +4,4 @@ services:
     volumes:
       - .:/src
       - /src/LibRaw/object
-    command: ["/src/build.sh"]
+    command: ["node", "/src/scripts/build.mjs"]

@@ -1,0 +1,40 @@
+{
+	"name": "libraw.wasm",
+	"version": "1.0.0",
+	"description": "WebAssembly build of [LibRaw](https://www.libraw.org/), a library for reading RAW iamges.",
+	"type": "module",
+	"main": "dist/index.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./libraw.wasm": {
+			"default": "./dist/libraw.wasm"
+		}
+	},
+	"scripts": {
+		"fmt": "biome format . --write",
+		"build": "pnpm run \"/^build:.*/\"",
+		"build:wasm": "node scripts/build.mjs",
+		"build:ts": "tsc"
+	},
+	"files": ["dist"],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ssssota/libraw.wasm.git"
+	},
+	"keywords": ["libraw", "raw", "image", "wasm", "webassembly"],
+	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ssssota/libraw.wasm/issues"
+	},
+	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
+	"packageManager": "pnpm@8.7.6",
+	"devDependencies": {
+		"@biomejs/biome": "^1.2.2",
+		"@types/node": "^20.6.4",
+		"typescript": "^5.0.2"
+	}
+}
