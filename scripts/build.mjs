@@ -6,6 +6,17 @@ import * as url from "node:url";
 const cwd = url.fileURLToPath(new URL("../", import.meta.url));
 const dist = path.join(cwd, "dist");
 
+const getRawImageFunction = `\
+extern "C" DllDef ushort *libraw_get_raw_image(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return lr->rawdata.raw_image;
+}`;
+const setUseCameraWbFunction = `\
+extern "C" DllDef void libraw_set_use_camera_wb(libraw_data_t *lr, int value) {
+	if (!lr) return;
+	lr->params.use_camera_wb = value;
+}`;
+
 async function main() {
 	await fs.rm(dist, { recursive: true, force: true });
 
@@ -47,11 +58,25 @@ async function main() {
 		"_libraw_raw2image",
 		"_libraw_dcraw_process",
 		"_libraw_dcraw_make_mem_image",
+		"_libraw_close",
+		"_libraw_version",
+		"_libraw_versionNumber",
+		// "_libraw_capabilities", // wasm has no any capabilities https://github.com/LibRaw/LibRaw/blob/17294b5fd82bff80463c21386d3847142a37549d/src/utils/utils_libraw.cpp#L193
+		"_libraw_cameraCount",
+		"_libraw_cameraList",
+		"_libraw_get_decoder_info",
+		"_libraw_unpack_function_name",
+		"_libraw_COLOR",
+		"_libraw_subtract_black",
+		"_libraw_recycle_datastream",
+		"_libraw_recycle",
+		"_libraw_strerror",
+		"_libraw_strprogress",
+		// special functions from emscripten
+		"_malloc",
+		// custom functions
 		"_libraw_get_raw_image",
 		"_libraw_set_use_camera_wb",
-		"_libraw_close",
-		"_libraw_strerror",
-		"_malloc",
 	];
 	const makefile = `\
 all: lib/libraw.wasm
@@ -68,10 +93,7 @@ lib/libraw.wasm: \${LIB_OBJECTS}
 	const librawCApi = await fs.readFile(librawCApiPath, "utf-8");
 	await fs.appendFile(
 		librawCApiPath,
-		`
-extern "C" DllDef ushort *libraw_get_raw_image(libraw_data_t *lr){if(!lr)return NULL;return lr->rawdata.raw_image;}
-extern "C" DllDef void libraw_set_use_camera_wb(libraw_data_t *lr, int value){if(!lr)return;lr->params.use_camera_wb = value;}
-`,
+		`${getRawImageFunction}\n${setUseCameraWbFunction}\n`,
 	);
 
 	child_process.execFileSync("make", {
