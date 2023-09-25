@@ -1,153 +1,123 @@
 // @ts-expect-error
 import initializeLibRawWasm from "./libraw.js";
-
-type UnsignedInt = number;
-type Int = number;
-type Float = number;
-type SizeT = number;
-type CharPtr = number & { "char*": never };
-type CharPtrPtr = number & { "char**": never };
-type Ptr = number;
-type LibRawDataT = number & { "libraw_data_t*": never };
-type LibRawIparamsT = number;
-type LibRawLensinfoT = number;
-type LibRawImgotherT = number;
-type ErrorCode = number & { error_code: never };
+import {
+	CharPtr,
+	ErrorCode,
+	Float,
+	Int,
+	LibRawDataT,
+	LibRawWasmModule,
+} from "./types/index.js";
 
 type MutablePtr = { ptr: number };
 
-interface LibRawWasmModule {
-	_malloc(size: SizeT): Ptr;
-	/**
-	 * @see https://www.libraw.org/docs/API-C.html#init
-	 */
-	_libraw_init(flags: UnsignedInt): LibRawDataT;
-	/**
-	 * @see https://www.libraw.org/docs/API-C.html#init
-	 */
-	_libraw_close(lr: LibRawDataT): void;
-	/**
-	 * @see https://www.libraw.org/docs/API-CXX.html#open_buffer
-	 */
-	_libraw_open_buffer(lr: LibRawDataT, buffer: Ptr, size: SizeT): ErrorCode;
-	_libraw_get_raw_height(lr: LibRawDataT): Int;
-	_libraw_get_raw_width(lr: LibRawDataT): Int;
-	_libraw_get_iheight(lr: LibRawDataT): Int;
-	_libraw_get_iwidth(lr: LibRawDataT): Int;
-	_libraw_get_cam_mul(lr: LibRawDataT, index: Int): Float;
-	_libraw_get_pre_mul(lr: LibRawDataT, index: Int): Float;
-	_libraw_get_rgb_cam(lr: LibRawDataT, index1: Int, index2: Int): Float;
-	_libraw_get_iparams(lr: LibRawDataT): LibRawIparamsT;
-	_libraw_get_lensinfo(lr: LibRawDataT): LibRawLensinfoT;
-	_libraw_get_imgother(lr: LibRawDataT): LibRawImgotherT;
-	_libraw_get_color_maximum(lr: LibRawDataT): Int;
-	_libraw_set_user_mul(lr: LibRawDataT, index: Int, val: Float): void;
-	_libraw_set_demosaic(lr: LibRawDataT, value: Int): void;
-	_libraw_set_adjust_maximum_thr(lr: LibRawDataT, value: Float): void;
-	_libraw_set_output_color(lr: LibRawDataT, value: Int): void;
-	_libraw_set_output_bps(lr: LibRawDataT, value: Int): void;
-	_libraw_set_gamma(lr: LibRawDataT, index: Int, value: Float): void;
-	_libraw_set_no_auto_bright(lr: LibRawDataT, value: Int): void;
-	_libraw_set_bright(lr: LibRawDataT, value: Float): void;
-	_libraw_set_highlight(lr: LibRawDataT): void;
-	_libraw_set_fbdd_noiserd(lr: LibRawDataT): void;
-	/**
-	 * @see https://www.libraw.org/docs/API-CXX.html#unpack
-	 */
-	_libraw_unpack(lr: LibRawDataT): ErrorCode;
-	/**
-	 * @see https://www.libraw.org/docs/API-CXX.html#raw2image
-	 */
-	_libraw_raw2image(lr: LibRawDataT): ErrorCode;
-	_libraw_dcraw_process(lr: LibRawDataT): ErrorCode;
-	_libraw_dcraw_make_mem_image(lr: LibRawDataT): void;
-	_libraw_get_raw_image(lr: LibRawDataT): void;
-	_libraw_set_use_camera_wb(lr: LibRawDataT): void;
-	/**
-	 * @param error error code
-	 * @returns {number} error message string pointer `char*`
-	 */
-	_libraw_strerror(error: ErrorCode): CharPtr;
-	/**
-	 * @returns {number} version string pointer `char*`
-	 * @see https://www.libraw.org/docs/API-CXX.html#version
-	 */
-	_libraw_version(lr: LibRawDataT): CharPtr;
-	/**
-	 * @returns {number} version number
-	 * @see https://www.libraw.org/docs/API-CXX.html#versionNumber
-	 */
-	_libraw_versionNumber(lr: LibRawDataT): number;
-	_libraw_capabilities(lr: LibRawDataT): void;
-	/**
-	 * @returns {number} count of cameras supported
-	 * @see https://www.libraw.org/docs/API-CXX.html#cameraCount
-	 */
-	_libraw_cameraCount(lr: LibRawDataT): number;
-	/**
-	 * @returns {number} camera names string array pointer `char**`
-	 * @see https://www.libraw.org/docs/API-CXX.html#cameraList
-	 */
-	_libraw_cameraList(lr: LibRawDataT): CharPtrPtr;
-	/**
-	 * The function fills libraw_decoder_info_t structure by passed pointer with current raw decoder data.
-	 * The function returns an integer number in accordance with the return code convention: positive if any system call has returned an error, negative (from the LibRaw error list) if there has been an error situation within LibRaw.
-	 * @param info `libraw_decoder_info_t*`
-	 * @see https://www.libraw.org/docs/API-CXX.html#get_decoder_info
-	 */
-	_libraw_get_decoder_info(info: Ptr): void;
-	/**
-	 * @returns {number} unpack function name string pointer `char*`
-	 * @see https://www.libraw.org/docs/API-CXX.html#unpack_function_name
-	 */
-	_libraw_unpack_function_name(lr: LibRawDataT): CharPtr;
-	/**
-	 * Returns pixel color (color component number) in bayer pattern at row,col.
-	 * @returns {number} value is in 0..3 range for 4-component Bayer (RGBG2, CMYG and so on) and in 0..2 range for 3-color data
-	 * @see https://www.libraw.org/docs/API-CXX.html#COLOR
-	 */
-	_libraw_COLOR(lr: LibRawDataT, row: Int, col: Int): Int;
-	/**
-	 * This call will subtract black level values from RAW data (for suitable RAW data).
-	 * `colordata.data_maximum` and `colordata.maximum` and black level data (colordata.black and colordata.cblack) will be adjusted too.
-	 *
-	 * This call should be used if you postprocess RAW data by your own code.
-	 * LibRaw postprocessing functions will call subtract_black() by oneself.
-	 *
-	 * The function returns an integer number in accordance with the return code convention:
-	 * positive if any system call has returned an error,
-	 * negative (from the LibRaw error list) if there has been an error situation within LibRaw.
-	 *
-	 * @see https://www.libraw.org/docs/API-CXX.html#subtract_black
-	 */
-	_libraw_subtract_black(lr: LibRawDataT): void;
-	/**
-	 * This call closes input datastream with associated data buffer and unblocks opened file.
-	 * @see https://www.libraw.org/docs/API-CXX.html#recycle_datastream
-	 */
-	_libraw_recycle_datastream(lr: LibRawDataT): void;
-	/**
-	 * Frees the allocated data of LibRaw instance, enabling one to process the next file using the same processor.
-	 * Repeated calls of recycle() are quite possible and do not conflict with anything.
-	 * @see https://www.libraw.org/docs/API-CXX.html#recycle
-	 */
-	_libraw_recycle(lr: LibRawDataT): void;
-	/**
-	 * Converts progress stage code to description string (in English).
-	 * @param progress {number} progress stage code `enum LibRaw_progress`
-	 * @returns {number} description string pointer `char*`
-	 * @see https://www.libraw.org/docs/API-CXX.html#strprogress
-	 */
-	_libraw_strprogress(progress: number): CharPtr;
-	HEAP8: Int8Array;
-	HEAP16: Int16Array;
-	HEAP32: Int32Array;
-	HEAPF32: Float32Array;
-	HEAPF64: Float64Array;
-	HEAPU8: Uint8Array;
-	HEAPU16: Uint16Array;
-	HEAPU32: Uint32Array;
-}
+export type IParams = {
+	make: string;
+	model: string;
+	software: string;
+	normalizedMake: string;
+	normalizedModel: string;
+	makerIndex: number;
+	rawCount: number;
+	dngVersion: number;
+	isFoveon: number;
+	colors: number;
+	filters: number;
+	xtrans: number[][];
+	xtransAbs: number[][];
+	cdesc: string;
+	xmplen: number;
+	xmpdata: string;
+};
+
+export type LensInfo = {
+	minFocal: number;
+	maxFocal: number;
+	maxAp4MinFocal: number;
+	maxAp4MaxFocal: number;
+	exifMaxAp: number;
+	lensMake: string;
+	lens: string;
+	lensSerial: string;
+	internalLensSerial: string;
+	focalLengthIn35mmFormat: number;
+	nikon?: NikonLens;
+	dng?: DngLens;
+	makernotes?: Makernotes;
+};
+export type NikonLens = {
+	effectiveMaxAp: number;
+	lensIDNumber: number;
+	lensFStops: number;
+	mcuVersion: number;
+	lensType: number;
+};
+export type DngLens = {
+	minFocal: number;
+	maxFocal: number;
+	maxAp4MinFocal: number;
+	maxAp4MaxFocal: number;
+};
+export type Makernotes = {
+	lensID: bigint;
+	lens: string;
+	lensFormat: number;
+	lensMount: number;
+	camID: bigint;
+	cameraFormat: number;
+	cameraMount: number;
+	body: string;
+	focalType: number;
+	lensFeaturesPre: string;
+	lensFeaturesSuf: string;
+	minFocal: number;
+	maxFocal: number;
+	maxAp4MinFocal: number;
+	maxAp4MaxFocal: number;
+	minAp4MinFocal: number;
+	minAp4MaxFocal: number;
+	maxAp: number;
+	minAp: number;
+	curFocal: number;
+	curAp: number;
+	maxAp4CurFocal: number;
+	minAp4CurFocal: number;
+	minFocusDistance: number;
+	focusRangeIndex: number;
+	lensFStops: number;
+	teleconverterID: bigint;
+	teleconverter: string;
+	adapterID: bigint;
+	adapter: string;
+	attachmentID: bigint;
+	attachment: string;
+	focalUnits: number;
+	focalLengthIn35mmFormat: number;
+};
+export type ImgOther = {
+	isoSpeed: number;
+	shutter: number;
+	aperture: number;
+	focalLen: number;
+	timestamp: number;
+	shotOrder: number;
+	gpsdata: number[];
+	parsedGps: ParsedGps;
+	desc: string;
+	artist: string;
+	analogbalance: number[];
+};
+export type ParsedGps = {
+	latitude: [Deg: number, min: number, sec: number];
+	longitude: [Deg: number, min: number, sec: number];
+	gpstimestamp: [Deg: number, min: number, sec: number];
+	altitude: number;
+	altref: number;
+	latref: number;
+	longref: number;
+	gpsstatus: number;
+	gpsparsed: number;
+};
 
 export class LibRaw implements Disposable {
 	private disposed = false;
@@ -193,6 +163,48 @@ export class LibRaw implements Disposable {
 	getIWidth() {
 		return this.libraw._libraw_get_iwidth(this.lr);
 	}
+	getCamMul(index: Int) {
+		return this.libraw._libraw_get_cam_mul(this.lr, index);
+	}
+	getPreMul(index: Int) {
+		return this.libraw._libraw_get_pre_mul(this.lr, index);
+	}
+	getRgbCam(index1: Int, index2: Int) {
+		return this.libraw._libraw_get_rgb_cam(this.lr, index1, index2);
+	}
+	getColorMaximum() {
+		return this.libraw._libraw_get_color_maximum(this.lr);
+	}
+	setUserMul(index: Int, val: Float) {
+		this.libraw._libraw_set_user_mul(this.lr, index, val);
+	}
+	setDemosaic(value: Int) {
+		this.libraw._libraw_set_demosaic(this.lr, value);
+	}
+	setAdjustMaximumThr(value: Float) {
+		this.libraw._libraw_set_adjust_maximum_thr(this.lr, value);
+	}
+	setOutputColor(value: Int) {
+		this.libraw._libraw_set_output_color(this.lr, value);
+	}
+	setOutputBps(value: Int) {
+		this.libraw._libraw_set_output_bps(this.lr, value);
+	}
+	setGamma(index: Int, value: Float) {
+		this.libraw._libraw_set_gamma(this.lr, index, value);
+	}
+	setNoAutoBright(value: Int) {
+		this.libraw._libraw_set_no_auto_bright(this.lr, value);
+	}
+	setBright(value: Float) {
+		this.libraw._libraw_set_bright(this.lr, value);
+	}
+	setHighlight(value: Int) {
+		this.libraw._libraw_set_highlight(this.lr, value);
+	}
+	setFbddNoiserd(value: Int) {
+		this.libraw._libraw_set_fbdd_noiserd(this.lr, value);
+	}
 	version(): string {
 		return this.readString(this.libraw._libraw_version(this.lr));
 	}
@@ -216,7 +228,7 @@ export class LibRaw implements Disposable {
 	color(row: Int, col: Int): number {
 		return this.libraw._libraw_COLOR(this.lr, row, col);
 	}
-	getIParams() {
+	getIParams(): IParams {
 		const ptr = { ptr: this.libraw._libraw_get_iparams(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L178-L198
@@ -283,7 +295,7 @@ export class LibRaw implements Disposable {
 			xmpdata,
 		};
 	}
-	getLensInfo() {
+	getLensInfo(): LensInfo {
 		const ptr = { ptr: this.libraw._libraw_get_lensinfo(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1018-L1026
@@ -317,17 +329,13 @@ export class LibRaw implements Disposable {
 		 * } libraw_nikonlens_t;
 		 * ```
 		 */
-		const nikonPtr = { ptr: this.readU8(ptr) };
-		const nikon =
-			nikonPtr.ptr === 0
-				? undefined
-				: {
-						effectiveMaxAp: this.readF32(nikonPtr),
-						lensIDNumber: this.readU8(nikonPtr),
-						lensFStops: this.readU8(nikonPtr),
-						mcuVersion: this.readU8(nikonPtr),
-						lensType: this.readU8(nikonPtr),
-				  };
+		const nikon: NikonLens = {
+			effectiveMaxAp: this.readF32(ptr),
+			lensIDNumber: this.readU8(ptr),
+			lensFStops: this.readU8(ptr),
+			mcuVersion: this.readU8(ptr),
+			lensType: this.readU8(ptr),
+		};
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1013-L1016
 		 * ```c
@@ -336,16 +344,12 @@ export class LibRaw implements Disposable {
 		 * } libraw_dnglens_t;
 		 * ```
 		 */
-		const dngPtr = { ptr: this.readU8(ptr) };
-		const dng =
-			dngPtr.ptr === 0
-				? undefined
-				: {
-						minFocal: this.readF32(dngPtr),
-						maxFocal: this.readF32(dngPtr),
-						maxAp4MinFocal: this.readF32(dngPtr),
-						maxAp4MaxFocal: this.readF32(dngPtr),
-				  };
+		const dng: DngLens = {
+			minFocal: this.readF32(ptr),
+			maxFocal: this.readF32(ptr),
+			maxAp4MinFocal: this.readF32(ptr),
+			maxAp4MaxFocal: this.readF32(ptr),
+		};
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L977-L1005
 		 * ```c
@@ -379,46 +383,42 @@ export class LibRaw implements Disposable {
 		 * } libraw_makernotes_lens_t;
 		 * ```
 		 */
-		const makernotesPtr = { ptr: this.readU8(ptr) };
-		const makernotes =
-			makernotesPtr.ptr === 0
-				? undefined
-				: {
-						lensID: this.readU32(makernotesPtr),
-						lens: this.readString(makernotesPtr, { length: 128 }),
-						lensFormat: this.readU16(makernotesPtr),
-						lensMount: this.readU16(makernotesPtr),
-						camID: this.readU32(makernotesPtr),
-						cameraFormat: this.readU16(makernotesPtr),
-						cameraMount: this.readU16(makernotesPtr),
-						body: this.readString(makernotesPtr, { length: 64 }),
-						focalType: this.readI16(makernotesPtr),
-						lensFeaturesPre: this.readString(makernotesPtr, { length: 16 }),
-						lensFeaturesSuf: this.readString(makernotesPtr, { length: 16 }),
-						minFocal: this.readF32(makernotesPtr),
-						maxFocal: this.readF32(makernotesPtr),
-						maxAp4MinFocal: this.readF32(makernotesPtr),
-						maxAp4MaxFocal: this.readF32(makernotesPtr),
-						minAp4MinFocal: this.readF32(makernotesPtr),
-						minAp4MaxFocal: this.readF32(makernotesPtr),
-						maxAp: this.readF32(makernotesPtr),
-						minAp: this.readF32(makernotesPtr),
-						curFocal: this.readF32(makernotesPtr),
-						curAp: this.readF32(makernotesPtr),
-						maxAp4CurFocal: this.readF32(makernotesPtr),
-						minAp4CurFocal: this.readF32(makernotesPtr),
-						minFocusDistance: this.readF32(makernotesPtr),
-						focusRangeIndex: this.readF32(makernotesPtr),
-						lensFStops: this.readF32(makernotesPtr),
-						teleconverterID: this.readU32(makernotesPtr),
-						teleconverter: this.readString(makernotesPtr, { length: 128 }),
-						adapterID: this.readU32(makernotesPtr),
-						adapter: this.readString(makernotesPtr, { length: 128 }),
-						attachmentID: this.readU32(makernotesPtr),
-						attachment: this.readString(makernotesPtr, { length: 128 }),
-						focalUnits: this.readU16(makernotesPtr),
-						focalLengthIn35mmFormat: this.readF32(makernotesPtr),
-				  };
+		const makernotes: Makernotes = {
+			lensID: this.readU64(ptr),
+			lens: this.readString(ptr, { length: 128 }),
+			lensFormat: this.readU16(ptr),
+			lensMount: this.readU16(ptr),
+			camID: this.readU64(ptr),
+			cameraFormat: this.readU16(ptr),
+			cameraMount: this.readU16(ptr),
+			body: this.readString(ptr, { length: 64 }),
+			focalType: this.readI16(ptr),
+			lensFeaturesPre: this.readString(ptr, { length: 16 }),
+			lensFeaturesSuf: this.readString(ptr, { length: 16 }),
+			minFocal: this.readF32(ptr),
+			maxFocal: this.readF32(ptr),
+			maxAp4MinFocal: this.readF32(ptr),
+			maxAp4MaxFocal: this.readF32(ptr),
+			minAp4MinFocal: this.readF32(ptr),
+			minAp4MaxFocal: this.readF32(ptr),
+			maxAp: this.readF32(ptr),
+			minAp: this.readF32(ptr),
+			curFocal: this.readF32(ptr),
+			curAp: this.readF32(ptr),
+			maxAp4CurFocal: this.readF32(ptr),
+			minAp4CurFocal: this.readF32(ptr),
+			minFocusDistance: this.readF32(ptr),
+			focusRangeIndex: this.readF32(ptr),
+			lensFStops: this.readF32(ptr),
+			teleconverterID: this.readU64(ptr),
+			teleconverter: this.readString(ptr, { length: 128 }),
+			adapterID: this.readU64(ptr),
+			adapter: this.readString(ptr, { length: 128 }),
+			attachmentID: this.readU64(ptr),
+			attachment: this.readString(ptr, { length: 128 }),
+			focalUnits: this.readU16(ptr),
+			focalLengthIn35mmFormat: this.readF32(ptr),
+		};
 
 		return {
 			minFocal,
@@ -436,20 +436,110 @@ export class LibRaw implements Disposable {
 			makernotes,
 		};
 	}
-	private error(code: ErrorCode): string {
-		return this.readString({ ptr: this.libraw._libraw_strerror(code) });
+	getImgOther(): ImgOther {
+		const ptr = { ptr: this.libraw._libraw_get_imgother(this.lr) };
+		/**
+		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L838-L850
+		 * ```c
+		 * typedef struct {
+		 *   float iso_speed;
+		 *   float shutter;
+		 *   float aperture;
+		 *   float focal_len;
+		 *   time_t timestamp;
+		 *   unsigned shot_order;
+		 *   unsigned gpsdata[32];
+		 *   libraw_gps_info_t parsed_gps;
+		 *   char desc[512], artist[64];
+		 *   float analogbalance[4];
+		 * } libraw_imgother_t;
+		 * ```
+		 */
+		const isoSpeed = this.readF32(ptr);
+		const shutter = this.readF32(ptr);
+		const aperture = this.readF32(ptr);
+		const focalLen = this.readF32(ptr);
+		const timestamp = this.readU32(ptr);
+		const shotOrder = this.readU32(ptr);
+		const gpsdata = Array.from({ length: 32 }, () => this.readU32(ptr));
+		/**
+		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L828-L836
+		 * ```c
+		 * typedef struct {
+		 *   float latitude[3];     // Deg,min,sec
+		 *   float longitude[3];    // Deg,min,sec
+		 *   float gpstimestamp[3]; // Deg,min,sec
+		 *   float altitude;
+		 *   char  altref, latref, longref, gpsstatus;
+		 *   char  gpsparsed;
+		 * } libraw_gps_info_t;
+		 */
+		const parsedGps: ParsedGps = {
+			latitude: [
+				this.readF32(ptr), // Deg
+				this.readF32(ptr), // min
+				this.readF32(ptr), // sec
+			],
+			longitude: [
+				this.readF32(ptr), // Deg
+				this.readF32(ptr), // min
+				this.readF32(ptr), // sec
+			],
+			gpstimestamp: [
+				this.readF32(ptr), // Deg
+				this.readF32(ptr), // min
+				this.readF32(ptr), // sec
+			],
+			altitude: this.readF32(ptr),
+			altref: this.readU8(ptr),
+			latref: this.readU8(ptr),
+			longref: this.readU8(ptr),
+			gpsstatus: this.readU8(ptr),
+			gpsparsed: this.readU8(ptr),
+		};
+		const desc = this.readString(ptr, { length: 512 });
+		const artist = this.readString(ptr, { length: 64 });
+		const analogbalance = Array.from({ length: 4 }, () => this.readF32(ptr));
+		return {
+			isoSpeed,
+			shutter,
+			aperture,
+			focalLen,
+			timestamp,
+			shotOrder,
+			gpsdata,
+			parsedGps,
+			desc,
+			artist,
+			analogbalance,
+		};
 	}
-	private readString(
-		ptr: MutablePtr | CharPtr,
-		options:
-			| { stripZero?: boolean; length?: number; zeroTerminated: true }
-			| { stripZero?: boolean; length: number; zeroTerminated?: boolean } = {
-			zeroTerminated: true,
-			stripZero: true,
-		},
-	) {
+	// getDecoderInfo() {
+	// 	/**
+	// 	 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L120-L124
+	// 	 * ```c
+	// 	 * typedef struct {
+	// 	 *   const char *decoder_name;
+	// 	 *   unsigned decoder_flags;
+	// 	 * } libraw_decoder_info_t;
+	// 	 * ```
+	// 	 */
+	// 	const decoderInfoPtr = this.libraw._malloc(8) as LibRawDecoderInfo;
+	// 	const code = this.libraw._libraw_get_decoder_info(decoderInfoPtr);
+	// 	console.log({ code });
+	// 	if (code) throw this.error(code);
+	// 	const ptr = { ptr: decoderInfoPtr };
+	// 	return {
+	// 		decoderName: this.readString(this.readU32(ptr) as CharPtr),
+	// 		decoderFlags: this.readU32(ptr),
+	// 	};
+	// }
+	private error(code: ErrorCode): string {
+		return this.readString(this.libraw._libraw_strerror(code));
+	}
+	private readString(ptr: MutablePtr | CharPtr, options?: { length?: number }) {
+		const { length: dataLength } = options ?? {};
 		const offset = typeof ptr === "number" ? ptr : ptr.ptr;
-		const dataLength = options.length;
 		const zeroIndex = this.libraw.HEAPU8.indexOf(0, offset);
 		const length = Math.max(
 			0,
@@ -458,48 +548,52 @@ export class LibRaw implements Disposable {
 		const heap = new Uint8Array(this.libraw.HEAPU8.buffer, offset, length);
 		if (typeof ptr !== "number") ptr.ptr += dataLength ?? length;
 		const str = new TextDecoder().decode(heap);
-		return options.stripZero ? str.replace(/\0/g, "") : str;
+		return str;
 	}
-	private readI8(ptr: MutablePtr): number {
-		const value = this.libraw.HEAP8[ptr.ptr];
-		ptr.ptr += 1;
-		return value;
-	}
+	// private readI8(ptr: MutablePtr): number {
+	// 	const value = this.libraw.HEAP8[ptr.ptr];
+	// 	ptr.ptr += 1;
+	// 	return value || 0;
+	// }
 	private readI16(ptr: MutablePtr): number {
 		const value = this.libraw.HEAP16[ptr.ptr / 2];
 		ptr.ptr += 2;
-		return value;
+		return value || 0;
 	}
-	private readI32(ptr: MutablePtr): number {
-		const value = this.libraw.HEAP32[ptr.ptr / 4];
-		ptr.ptr += 4;
-		return value;
-	}
+	// private readI32(ptr: MutablePtr): number {
+	// 	const value = this.libraw.HEAP32[ptr.ptr / 4];
+	// 	ptr.ptr += 4;
+	// 	return value || 0;
+	// }
 	private readU8(ptr: MutablePtr): number {
 		const value = this.libraw.HEAPU8[ptr.ptr];
 		ptr.ptr += 1;
-		return value;
+		return value || 0;
 	}
 	private readU16(ptr: MutablePtr): number {
 		const value = this.libraw.HEAPU16[ptr.ptr / 2];
 		ptr.ptr += 2;
-		return value;
+		return value || 0;
 	}
 	private readU32(ptr: MutablePtr): number {
 		const value = this.libraw.HEAPU32[ptr.ptr / 4];
 		ptr.ptr += 4;
-		return value;
+		return value || 0;
+	}
+	private readU64(ptr: MutablePtr): bigint {
+		ptr.ptr += 8;
+		return 0n;
 	}
 	private readF32(ptr: MutablePtr): number {
 		const value = this.libraw.HEAPF32[ptr.ptr / 4];
 		ptr.ptr += 4;
-		return value;
+		return value || 0;
 	}
-	private readF64(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPF64[ptr.ptr / 8];
-		ptr.ptr += 8;
-		return value;
-	}
+	// private readF64(ptr: MutablePtr): number {
+	// 	const value = this.libraw.HEAPF64[ptr.ptr / 8];
+	// 	ptr.ptr += 8;
+	// 	return value || 0;
+	// }
 	dispose() {
 		if (this.disposed) return;
 		this.libraw._libraw_close(this.lr);

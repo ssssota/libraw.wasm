@@ -27,10 +27,13 @@
   <input type="file" @change="onFileChange" />
   <ul>
     <li>
-      parameters: <code>{{ JSON.stringify(log(libraw?.getIParams())) }}</code>
+      parameters: <pre><code>{{ JSON.stringify(log(libraw?.getIParams()), undefined, 2) }}</code></pre>
     </li>
     <li>
-      lens info: <code>{{ JSON.stringify(log(libraw?.getLensInfo())) }}</code>
+      lens info: <pre><code>{{ JSON.stringify(log(libraw?.getLensInfo()), (_, v) => { return typeof v === 'bigint' ? Number(v) : v; }, 2) }}</code></pre>
+    </li>
+    <li>
+      img other: <pre><code>{{ JSON.stringify(log(libraw?.getImgOther()), undefined, 2) }}</code></pre>
     </li>
     <li>
       raw height: {{ log(libraw?.getRawHeight()) }}
@@ -60,7 +63,7 @@
       camera count: {{ log(libraw?.cameraCount()) }}
     </li>
     <li>
-      camera list: <code>{{ log(libraw?.cameraList()) }}</code>
+      camera list: <pre><code>{{ log(libraw?.cameraList()) }}</code></pre>
     </li>
   </ul>
 </template>
