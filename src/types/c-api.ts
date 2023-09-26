@@ -9,6 +9,9 @@ export type LibRawDataT = number & { "libraw_data_t*": never };
 export type LibRawIparamsT = number;
 export type LibRawLensInfoT = number;
 export type LibRawImgotherT = number;
+export type LibRawThumbnailT = number & { "libraw_thumbnail_t*": never };
+export type LibRawShootingInfoT = number & { "libraw_shootinginfo_t*": never };
+export type LibRawMakernotesT = number & { "libraw_makernotes_t*": never };
 export type LibRawDecoderInfo = number & { "libraw_decoder_info_t*": never };
 export type ErrorCode = number & { error_code: never };
 
@@ -57,8 +60,6 @@ export interface LibRawWasmModule {
 	_libraw_raw2image(lr: LibRawDataT): ErrorCode;
 	_libraw_dcraw_process(lr: LibRawDataT): ErrorCode;
 	_libraw_dcraw_make_mem_image(lr: LibRawDataT): void;
-	_libraw_get_raw_image(lr: LibRawDataT): void;
-	_libraw_set_use_camera_wb(lr: LibRawDataT): void;
 	/**
 	 * @param error error code
 	 * @returns {number} error message string pointer `char*`
@@ -135,6 +136,25 @@ export interface LibRawWasmModule {
 	 * @see https://www.libraw.org/docs/API-CXX.html#strprogress
 	 */
 	_libraw_strprogress(progress: number): CharPtr;
+	// custom functions
+	_libraw_get_raw_image(lr: LibRawDataT): void;
+	_libraw_set_use_camera_wb(lr: LibRawDataT): void;
+	_libraw_get_thumbnail(lr: LibRawDataT): LibRawThumbnailT;
+	_libraw_get_shootinginfo(lr: LibRawDataT): LibRawShootingInfoT;
+	_libraw_get_makernotes(lr: LibRawDataT): LibRawMakernotesT;
+	_libraw_get_canon_makernotes(lr: LibRawDataT): number;
+	_libraw_get_nikon_makernotes(lr: LibRawDataT): number;
+	_libraw_get_hasselblad_makernotes(lr: LibRawDataT): number;
+	_libraw_get_fuji_info(lr: LibRawDataT): number;
+	_libraw_get_olympus_makernotes(lr: LibRawDataT): number;
+	_libraw_get_sony_info(lr: LibRawDataT): number;
+	_libraw_get_kodak_makernotes(lr: LibRawDataT): number;
+	_libraw_get_panasonic_makernotes(lr: LibRawDataT): number;
+	_libraw_get_pentax_makernotes(lr: LibRawDataT): number;
+	_libraw_get_phaseone_makernotes(lr: LibRawDataT): number;
+	_libraw_get_ricoh_makernotes(lr: LibRawDataT): number;
+	_libraw_get_samsung_makernotes(lr: LibRawDataT): number;
+	_libraw_get_common_metadata(lr: LibRawDataT): number;
 	HEAP8: Int8Array;
 	HEAP16: Int16Array;
 	HEAP32: Int32Array;

@@ -6,16 +6,98 @@ import * as url from "node:url";
 const cwd = url.fileURLToPath(new URL("../", import.meta.url));
 const dist = path.join(cwd, "dist");
 
-const getRawImageFunction = `\
+const customFunctions = {
+	_libraw_get_raw_image: `\
 extern "C" DllDef ushort *libraw_get_raw_image(libraw_data_t *lr) {
 	if (!lr) return NULL;
 	return lr->rawdata.raw_image;
-}`;
-const setUseCameraWbFunction = `\
+}`,
+	_libraw_set_use_camera_wb: `\
 extern "C" DllDef void libraw_set_use_camera_wb(libraw_data_t *lr, int value) {
 	if (!lr) return;
 	lr->params.use_camera_wb = value;
-}`;
+}`,
+	_libraw_get_thumbnail: `\
+extern "C" DllDef libraw_thumbnail_t *libraw_get_thumbnail(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->thumbnail);
+}`,
+	_libraw_get_shootinginfo: `\
+extern "C" DllDef libraw_shootinginfo_t *libraw_get_shootinginfo(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->shootinginfo);
+}`,
+	_libraw_get_makernotes: `\
+extern "C" DllDef libraw_makernotes_t *libraw_get_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes);
+}`,
+	_libraw_get_canon_makernotes: `\
+extern "C" DllDef libraw_canon_makernotes_t *libraw_get_canon_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.canon);
+}`,
+	_libraw_get_nikon_makernotes: `\
+extern "C" DllDef libraw_nikon_makernotes_t *libraw_get_nikon_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.nikon);
+}`,
+	_libraw_get_hasselblad_makernotes: `\
+extern "C" DllDef libraw_hasselblad_makernotes_t *libraw_get_hasselblad_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.hasselblad);
+}`,
+	_libraw_get_fuji_info: `\
+extern "C" DllDef libraw_fuji_info_t *libraw_get_fuji_info(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.fuji);
+}`,
+	_libraw_get_olympus_makernotes: `\
+extern "C" DllDef libraw_olympus_makernotes_t *libraw_get_olympus_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.olympus);
+}`,
+	_libraw_get_sony_info: `\
+extern "C" DllDef libraw_sony_info_t *libraw_get_sony_info(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.sony);
+}`,
+	_libraw_get_kodak_makernotes: `\
+extern "C" DllDef libraw_kodak_makernotes_t *libraw_get_kodak_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.kodak);
+}`,
+	_libraw_get_panasonic_makernotes: `\
+extern "C" DllDef libraw_panasonic_makernotes_t *libraw_get_panasonic_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.panasonic);
+}`,
+	_libraw_get_pentax_makernotes: `\
+extern "C" DllDef libraw_pentax_makernotes_t *libraw_get_pentax_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.pentax);
+}`,
+	_libraw_get_phaseone_makernotes: `\
+extern "C" DllDef libraw_p1_makernotes_t *libraw_get_phaseone_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.phaseone);
+}`,
+	_libraw_get_ricoh_makernotes: `\
+extern "C" DllDef libraw_ricoh_makernotes_t *libraw_get_ricoh_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.ricoh);
+}`,
+	_libraw_get_samsung_makernotes: `\
+extern "C" DllDef libraw_samsung_makernotes_t *libraw_get_samsung_makernotes(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.samsung);
+}`,
+	_libraw_get_common_metadata: `\
+extern "C" DllDef libraw_metadata_common_t *libraw_get_common_metadata(libraw_data_t *lr) {
+	if (!lr) return NULL;
+	return &(lr->makernotes.common);
+}`,
+};
 
 async function main() {
 	await fs.rm(dist, { recursive: true, force: true });
@@ -75,8 +157,7 @@ async function main() {
 		// special functions from emscripten
 		"_malloc",
 		// custom functions
-		"_libraw_get_raw_image",
-		"_libraw_set_use_camera_wb",
+		...Object.keys(customFunctions),
 	];
 	const makefile = `\
 all: lib/libraw.wasm
@@ -93,7 +174,7 @@ lib/libraw.wasm: \${LIB_OBJECTS}
 	const librawCApi = await fs.readFile(librawCApiPath, "utf-8");
 	await fs.appendFile(
 		librawCApiPath,
-		`${getRawImageFunction}\n${setUseCameraWbFunction}\n`,
+		Object.values(customFunctions).join("\n"),
 	);
 
 	child_process.execFileSync("make", {

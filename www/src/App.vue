@@ -9,6 +9,11 @@
     console.log(val);
     return val;
   }
+  const jsonReplacer = (_: string, v: any) => {
+    if (typeof v === 'bigint') return Number(v);
+    if (ArrayBuffer.isView(v)) return `ArrayBuffer(${v.byteLength})`;
+    return v;
+  }
   const onFileChange = async (ev: Event) => {
     if (!(ev.currentTarget instanceof HTMLInputElement)) 
       return;
@@ -30,22 +35,25 @@
       parameters: <pre><code>{{ JSON.stringify(log(libraw?.getIParams()), undefined, 2) }}</code></pre>
     </li>
     <li>
-      lens info: <pre><code>{{ JSON.stringify(log(libraw?.getLensInfo()), (_, v) => { return typeof v === 'bigint' ? Number(v) : v; }, 2) }}</code></pre>
+      lens info: <pre><code>{{ JSON.stringify(log(libraw?.getLensInfo()), jsonReplacer, 2) }}</code></pre>
     </li>
     <li>
       img other: <pre><code>{{ JSON.stringify(log(libraw?.getImgOther()), undefined, 2) }}</code></pre>
     </li>
     <li>
-      raw height: {{ log(libraw?.getRawHeight()) }}
+      makernotes: <pre><code>{{ JSON.stringify(log(libraw?.getMakernotes()), undefined, 2) }}</code></pre>
     </li>
     <li>
-      raw width: {{ log(libraw?.getRawWidth()) }}
+      shooting info: <pre><code>{{ JSON.stringify(log(libraw?.getShootingInfo()), undefined, 2) }}</code></pre>
     </li>
     <li>
-      iheighht: {{ log(libraw?.getIHeight()) }}
+      thumbnail: <pre><code>{{ JSON.stringify(log(libraw?.getThumbnail()), jsonReplacer, 2) }}</code></pre>
     </li>
     <li>
-      iwidth: {{ log(libraw?.getIWidth()) }}
+      raw size: ({{ log(libraw?.getRawWidth()) }}, {{ log(libraw?.getRawHeight()) }})
+    </li>
+    <li>
+      isize: ({{ log(libraw?.getIWidth()) }}, {{ log(libraw?.getIHeight()) }})
     </li>
     <li>
       color(0, 0): {{ log(libraw?.color(0, 0)) }}
