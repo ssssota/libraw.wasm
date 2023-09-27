@@ -17,7 +17,9 @@
 		"fmt": "biome format . --write",
 		"build": "pnpm run \"/^build:.*/\"",
 		"build:wasm": "node scripts/build.mjs",
-		"build:ts": "tsc"
+		"build:ts": "tsc",
+		"watch": "pnpm run \"/^watch:.*/\"",
+		"watch:ts": "tsc -w"
 	},
 	"files": ["dist"],
 	"repository": {
@@ -31,7 +33,7 @@
 		"url": "https://github.com/ssssota/libraw.wasm/issues"
 	},
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
-	"packageManager": "pnpm@8.7.6",
+	"packageManager": "pnpm@8.8.0",
 	"devDependencies": {
 		"@biomejs/biome": "^1.2.2",
 		"@types/node": "^20.6.4",

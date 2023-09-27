@@ -137,6 +137,9 @@ export type ThumbnailFormat =
 
 export class LibRaw implements Disposable {
 	private disposed = false;
+	private get view(): DataView {
+		return new DataView(this.libraw.HEAPU8.buffer);
+	}
 	private constructor(
 		private libraw: LibRawWasmModule,
 		private lr: LibRawDataT,
@@ -243,6 +246,12 @@ export class LibRaw implements Disposable {
 	}
 	color(row: Int, col: Int): number {
 		return this.libraw._libraw_COLOR(this.lr, row, col);
+	}
+	recycle() {
+		this.libraw._libraw_recycle(this.lr);
+	}
+	recycleDatastream() {
+		this.libraw._libraw_recycle_datastream(this.lr);
 	}
 	getIParams(): IParams {
 		const ptr = { ptr: this.libraw._libraw_get_iparams(this.lr) };
@@ -2118,38 +2127,39 @@ export class LibRaw implements Disposable {
 		return str;
 	}
 	private readI8(ptr: MutablePtr): number {
-		const value = this.libraw.HEAP8[ptr.ptr];
+		const value = this.view.getInt8(ptr.ptr);
 		ptr.ptr += 1;
 		return value || 0;
 	}
 	private readI16(ptr: MutablePtr): number {
-		const value = this.libraw.HEAP16[ptr.ptr / 2];
+		const value = this.view.getInt16(ptr.ptr, true);
 		ptr.ptr += 2;
 		return value || 0;
 	}
 	private readI32(ptr: MutablePtr): number {
-		const value = this.libraw.HEAP32[ptr.ptr / 4];
+		const value = this.view.getInt32(ptr.ptr, true);
 		ptr.ptr += 4;
 		return value || 0;
 	}
 	private readU8(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPU8[ptr.ptr];
+		const value = this.view.getUint8(ptr.ptr);
 		ptr.ptr += 1;
 		return value || 0;
 	}
 	private readU16(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPU16[ptr.ptr / 2];
+		const value = this.view.getUint16(ptr.ptr, true);
 		ptr.ptr += 2;
 		return value || 0;
 	}
 	private readU32(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPU32[ptr.ptr / 4];
+		const value = this.view.getUint32(ptr.ptr, true);
 		ptr.ptr += 4;
 		return value || 0;
 	}
 	private readU64(ptr: MutablePtr): bigint {
+		const value = this.view.getBigUint64(ptr.ptr, true);
 		ptr.ptr += 8;
-		return 0n;
+		return value || 0n;
 	}
 	private readF32(ptr: MutablePtr): number {
 		const value = this.libraw.HEAPF32[ptr.ptr / 4];
