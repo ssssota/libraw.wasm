@@ -250,9 +250,6 @@ export class LibRaw implements Disposable {
 	recycle() {
 		this.libraw._libraw_recycle(this.lr);
 	}
-	recycleDatastream() {
-		this.libraw._libraw_recycle_datastream(this.lr);
-	}
 	getIParams(): IParams {
 		const ptr = { ptr: this.libraw._libraw_get_iparams(this.lr) };
 		/**

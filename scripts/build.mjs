@@ -150,7 +150,6 @@ async function main() {
 		"_libraw_unpack_function_name",
 		"_libraw_COLOR",
 		"_libraw_subtract_black",
-		"_libraw_recycle_datastream",
 		"_libraw_recycle",
 		"_libraw_strerror",
 		"_libraw_strprogress",

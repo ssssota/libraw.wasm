@@ -119,11 +119,6 @@ export interface LibRawWasmModule {
 	 */
 	_libraw_subtract_black(lr: LibRawDataT): void;
 	/**
-	 * This call closes input datastream with associated data buffer and unblocks opened file.
-	 * @see https://www.libraw.org/docs/API-CXX.html#recycle_datastream
-	 */
-	_libraw_recycle_datastream(lr: LibRawDataT): void;
-	/**
 	 * Frees the allocated data of LibRaw instance, enabling one to process the next file using the same processor.
 	 * Repeated calls of recycle() are quite possible and do not conflict with anything.
 	 * @see https://www.libraw.org/docs/API-CXX.html#recycle
