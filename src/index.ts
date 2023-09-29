@@ -170,6 +170,58 @@ export class LibRaw implements Disposable {
 		const code = this.libraw._libraw_unpack(this.lr);
 		if (code) throw this.error(code);
 	}
+	async raw2image() {
+		const code = this.libraw._libraw_raw2image(this.lr);
+		if (code) throw this.error(code);
+	}
+	async dcrawProcess() {
+		const code = this.libraw._libraw_dcraw_process(this.lr);
+		if (code) throw this.error(code);
+	}
+	dcrawMakeMemImage() {
+		const errcPtr = this.libraw._malloc(4);
+		const ptr = {
+			ptr: this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr),
+		};
+		const code = this.readI32({ ptr: errcPtr });
+		if (code) throw this.error(code as ErrorCode);
+		if (!ptr.ptr) throw new Error("Unexpected error");
+		/**
+		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L170-L176
+		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_const.h#L804-L808
+		 * ```c
+		 * enum LibRaw_image_formats {
+		 *   LIBRAW_IMAGE_JPEG = 1,
+		 *   LIBRAW_IMAGE_BITMAP = 2
+		 * };
+		 * typedef struct {
+		 *   enum LibRaw_image_formats type;
+		 *   ushort height, width, colors, bits;
+		 *   unsigned int data_size;
+		 *   unsigned char data[1]; // uchar *data;
+		 * } libraw_processed_image_t;
+		 * ```
+		 */
+		const type = this.readI32(ptr);
+		const height = this.readU16(ptr);
+		const width = this.readU16(ptr);
+		const colors = this.readU16(ptr);
+		const bits = this.readU16(ptr);
+		const dataSize = this.readU32(ptr);
+		const data = new Uint8Array(
+			this.libraw.HEAPU8.buffer,
+			this.readU32(ptr),
+			dataSize,
+		);
+		return {
+			type: type === 1 ? "jpeg" : "bitmap",
+			height,
+			width,
+			colors,
+			bits,
+			data,
+		};
+	}
 	getRawHeight() {
 		return this.libraw._libraw_get_raw_height(this.lr);
 	}

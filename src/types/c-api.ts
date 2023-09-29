@@ -13,6 +13,9 @@ export type LibRawThumbnailT = number & { "libraw_thumbnail_t*": never };
 export type LibRawShootingInfoT = number & { "libraw_shootinginfo_t*": never };
 export type LibRawMakernotesT = number & { "libraw_makernotes_t*": never };
 export type LibRawDecoderInfo = number & { "libraw_decoder_info_t*": never };
+export type LibRawProcessedImageT = number & {
+	"libraw_processed_image_t*": never;
+};
 export type ErrorCode = number & { error_code: never };
 
 export interface LibRawWasmModule {
@@ -59,7 +62,10 @@ export interface LibRawWasmModule {
 	 */
 	_libraw_raw2image(lr: LibRawDataT): ErrorCode;
 	_libraw_dcraw_process(lr: LibRawDataT): ErrorCode;
-	_libraw_dcraw_make_mem_image(lr: LibRawDataT): void;
+	_libraw_dcraw_make_mem_image(
+		lr: LibRawDataT,
+		errc: Ptr,
+	): LibRawProcessedImageT;
 	/**
 	 * @param error error code
 	 * @returns {number} error message string pointer `char*`
