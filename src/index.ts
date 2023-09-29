@@ -6,6 +6,7 @@ import {
 	Float,
 	Int,
 	LibRawDataT,
+	LibRawProcessedImageT,
 	LibRawWasmModule,
 } from "./types/index.js";
 
@@ -180,12 +181,24 @@ export class LibRaw implements Disposable {
 	}
 	dcrawMakeMemImage() {
 		const errcPtr = this.libraw._malloc(4);
-		const ptr = {
-			ptr: this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr),
-		};
+		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
 		if (code) throw this.error(code as ErrorCode);
-		if (!ptr.ptr) throw new Error("Unexpected error");
+		if (!ptr) throw new Error("Unexpected error");
+		this.libraw._free(errcPtr);
+		return this.readProcessedImage(ptr);
+	}
+	dcrawMakeMemThumb() {
+		const errcPtr = this.libraw._malloc(4);
+		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
+		const code = this.readI32({ ptr: errcPtr });
+		if (code) throw this.error(code as ErrorCode);
+		if (!ptr) throw new Error("Unexpected error");
+		this.libraw._free(errcPtr);
+		return this.readProcessedImage(ptr);
+	}
+	private readProcessedImage(processed: LibRawProcessedImageT) {
+		const ptr = { ptr: processed };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L170-L176
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_const.h#L804-L808
@@ -212,7 +225,8 @@ export class LibRaw implements Disposable {
 			this.libraw.HEAPU8.buffer,
 			this.readU32(ptr),
 			dataSize,
-		);
+		).slice();
+		this.libraw._libraw_dcraw_clear_mem(ptr.ptr);
 		return {
 			type: type === 1 ? "jpeg" : "bitmap",
 			height,

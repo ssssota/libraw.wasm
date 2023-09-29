@@ -20,6 +20,7 @@ export type ErrorCode = number & { error_code: never };
 
 export interface LibRawWasmModule {
 	_malloc(size: SizeT): Ptr;
+	_free(ptr: Ptr): void;
 	/**
 	 * @see https://www.libraw.org/docs/API-C.html#init
 	 */
@@ -66,6 +67,11 @@ export interface LibRawWasmModule {
 		lr: LibRawDataT,
 		errc: Ptr,
 	): LibRawProcessedImageT;
+	_libraw_dcraw_make_mem_thumb(
+		lr: LibRawDataT,
+		errc: Ptr,
+	): LibRawProcessedImageT;
+	_libraw_dcraw_clear_mem(lr: LibRawProcessedImageT): void;
 	/**
 	 * @param error error code
 	 * @returns {number} error message string pointer `char*`

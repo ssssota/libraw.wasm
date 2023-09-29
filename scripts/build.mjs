@@ -140,6 +140,8 @@ async function main() {
 		"_libraw_raw2image",
 		"_libraw_dcraw_process",
 		"_libraw_dcraw_make_mem_image",
+		"_libraw_dcraw_make_mem_thumb",
+		"_libraw_dcraw_clear_mem",
 		"_libraw_close",
 		"_libraw_version",
 		"_libraw_versionNumber",
@@ -155,6 +157,7 @@ async function main() {
 		"_libraw_strprogress",
 		// special functions from emscripten
 		"_malloc",
+		"_free",
 		// custom functions
 		...Object.keys(customFunctions),
 	];
