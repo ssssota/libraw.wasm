@@ -2,6 +2,7 @@
   import { LibRaw } from 'libraw.wasm';
   import { onMounted, ref } from 'vue';
   const libraw = ref<LibRaw>();
+  const canvas = ref<HTMLCanvasElement | null>(null);
   onMounted(() => {
     LibRaw.create().then((lr) => (libraw.value = lr));
   });
@@ -10,27 +11,50 @@
     return val;
   }
   const jsonReplacer = (_: string, v: any) => {
-    if (typeof v === 'bigint') return Number(v);
+    if (typeof v === 'bigint') return v.toLocaleString();
     if (ArrayBuffer.isView(v)) return `ArrayBuffer(${v.byteLength})`;
     return v;
   }
   const onFileChange = async (ev: Event) => {
-    if (!(ev.currentTarget instanceof HTMLInputElement)) 
-      return;
-    const file = ev.currentTarget.files?.[0];
-    if (!file) return;
-    if (libraw.value) libraw.value.dispose();
-    const lr = await LibRaw.create();
-    console.log({lr});
-    const buffer = await file.arrayBuffer();
-    await lr.open(buffer);
-    libraw.value = lr;
+    try {
+      if (!(ev.currentTarget instanceof HTMLInputElement)) 
+        return;
+      const file = ev.currentTarget.files?.[0];
+      if (!file) return;
+      if (libraw.value) libraw.value.dispose();
+      const lr = await LibRaw.create();
+      console.log({lr});
+      const buffer = await file.arrayBuffer();
+      await lr.open(buffer);
+      libraw.value = lr;
+      await lr.unpackThumb();
+      const image = lr.getThumbnail();
+      const ctx = canvas.value?.getContext('2d');
+      if (!canvas.value || !ctx) return;
+      canvas.value.width = image.twidth;
+      canvas.value.height = image.theight;
+      if (image.tformat === 'jpeg') {
+        const blob = new Blob([image.thumb], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+        };
+        img.src = url;
+      }
+    } catch(e) {
+      console.error(e);
+    }
   }
 </script>
 
 <template>
   <input type="file" @change="onFileChange" />
   <ul>
+    <li>
+      <canvas ref="canvas"></canvas>
+    </li>
     <li>
       parameters: <pre><code>{{ JSON.stringify(log(libraw?.getIParams()), undefined, 2) }}</code></pre>
     </li>
@@ -77,4 +101,8 @@
 </template>
 
 <style scoped>
+canvas {
+  max-width: 100%;
+  max-height: 100%;
+}
 </style>

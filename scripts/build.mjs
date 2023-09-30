@@ -137,6 +137,8 @@ async function main() {
 		"_libraw_open_buffer",
 		"_libraw_init",
 		"_libraw_unpack",
+		"_libraw_unpack_thumb",
+		"_libraw_unpack_thumb_ex",
 		"_libraw_raw2image",
 		"_libraw_dcraw_process",
 		"_libraw_dcraw_make_mem_image",

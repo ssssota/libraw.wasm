@@ -171,6 +171,14 @@ export class LibRaw implements Disposable {
 		const code = this.libraw._libraw_unpack(this.lr);
 		if (code) throw this.error(code);
 	}
+	async unpackThumb() {
+		const code = this.libraw._libraw_unpack_thumb(this.lr);
+		if (code) throw this.error(code);
+	}
+	async unpackThumbEx(i: Int) {
+		const code = this.libraw._libraw_unpack_thumb_ex(this.lr, i);
+		if (code) throw this.error(code);
+	}
 	async raw2image() {
 		const code = this.libraw._libraw_raw2image(this.lr);
 		if (code) throw this.error(code);
@@ -183,18 +191,18 @@ export class LibRaw implements Disposable {
 		const errcPtr = this.libraw._malloc(4);
 		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
+		this.libraw._free(errcPtr);
 		if (code) throw this.error(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
-		this.libraw._free(errcPtr);
 		return this.readProcessedImage(ptr);
 	}
 	dcrawMakeMemThumb() {
 		const errcPtr = this.libraw._malloc(4);
 		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
+		this.libraw._free(errcPtr);
 		if (code) throw this.error(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
-		this.libraw._free(errcPtr);
 		return this.readProcessedImage(ptr);
 	}
 	private readProcessedImage(processed: LibRawProcessedImageT) {
@@ -226,6 +234,7 @@ export class LibRaw implements Disposable {
 			this.readU32(ptr),
 			dataSize,
 		).slice();
+
 		this.libraw._libraw_dcraw_clear_mem(ptr.ptr);
 		return {
 			type: type === 1 ? "jpeg" : "bitmap",
@@ -233,8 +242,9 @@ export class LibRaw implements Disposable {
 			width,
 			colors,
 			bits,
+			dataSize,
 			data,
-		};
+		} as const;
 	}
 	getRawHeight() {
 		return this.libraw._libraw_get_raw_height(this.lr);
@@ -315,6 +325,10 @@ export class LibRaw implements Disposable {
 	}
 	recycle() {
 		this.libraw._libraw_recycle(this.lr);
+	}
+	getRawImage() {
+		const ptr = this.libraw._libraw_get_raw_image(this.lr);
+		return new Uint16Array(this.libraw.HEAPU8.buffer, ptr);
 	}
 	getIParams(): IParams {
 		const ptr = { ptr: this.libraw._libraw_get_iparams(this.lr) };
