@@ -194,16 +194,20 @@ export class LibRaw implements Disposable {
 		this.libraw._free(errcPtr);
 		if (code) throw this.error(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
-		return this.readProcessedImage(ptr);
+		const ret = this.readProcessedImage(ptr);
+		this.libraw._libraw_dcraw_clear_mem(ptr);
+		return ret;
 	}
 	dcrawMakeMemThumb() {
 		const errcPtr = this.libraw._malloc(4);
-		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
+		const ptr = this.libraw._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
 		this.libraw._free(errcPtr);
 		if (code) throw this.error(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
-		return this.readProcessedImage(ptr);
+		const ret = this.readProcessedImage(ptr);
+		this.libraw._libraw_dcraw_clear_mem(ptr);
+		return ret;
 	}
 	private readProcessedImage(processed: LibRawProcessedImageT) {
 		const ptr = { ptr: processed };
@@ -234,8 +238,6 @@ export class LibRaw implements Disposable {
 			this.readU32(ptr),
 			dataSize,
 		).slice();
-
-		this.libraw._libraw_dcraw_clear_mem(ptr.ptr);
 		return {
 			type: type === 1 ? "jpeg" : "bitmap",
 			height,
