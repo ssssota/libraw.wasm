@@ -1,0 +1,35 @@
+name: Setup environment
+description: Setup environment for the project (Node.js, emscripten, etc.)
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: false
+    default: latest
+  emscripten-version:
+    description: Emscripten version to use
+    required: false
+    default: latest
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+    - name: Install dependencies
+      shell: bash
+      run: corepack enable && pnpm install
+    - name: Install emscripten
+      shell: bash
+      run: |
+        cd
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install $EMSCRIPTEN_VERSION
+        ./emsdk activate $EMSCRIPTEN_VERSION
+        source ./emsdk_env.sh
+        echo "$HOME/emsdk" >> $GITHUB_PATH
+        echo "$HOME/emsdk/upstream/emscripten" >> $GITHUB_PATH
+      env:
+        EMSCRIPTEN_VERSION: ${{ inputs.emscripten-version }}
