@@ -1,0 +1,17 @@
+name: Build
+description: Build the project
+runs:
+  using: composite
+  steps:
+    - name: Get LibRaw git hash
+      id: get-libraw-hash
+      shell: bash
+      working-directory: LibRaw
+      run: echo "hash=$(git log -n1 --pretty=%H)" >> $GITHUB_OUTPUT
+    - uses: actions/cache@v3
+      with:
+        path: LibRaw/object
+        key: ${{ runner.os }}-LibRaw-object-${{ hashFiles('scripts/build.mjs') }}-${{ steps.get-libraw-hash.outputs.hash }}
+    - name: Build
+      shell: bash
+      run: pnpm build
