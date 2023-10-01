@@ -14,7 +14,8 @@
 		}
 	},
 	"scripts": {
-		"fmt": "biome format . --write",
+		"fmt": "biome format --write . && biome lint --apply .",
+		"check": "biome format . && biome lint .",
 		"build": "pnpm run \"/^build:.*/\"",
 		"build:wasm": "node scripts/build.mjs",
 		"build:ts": "tsc",

@@ -15,3 +15,4 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup
       - run: pnpm build
+      - run: pnpm check
