@@ -1,0 +1,7 @@
+.canvas {
+  max-width: 100%;
+}
+.inspect {
+  display: flex;
+  column-gap: 1rem;
+}
