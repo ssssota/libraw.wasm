@@ -34,7 +34,7 @@
 		"url": "https://github.com/ssssota/libraw.wasm/issues"
 	},
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
-	"packageManager": "pnpm@8.10.5",
+	"packageManager": "pnpm@8.11.0",
 	"devDependencies": {
 		"@biomejs/biome": "^1.2.2",
 		"@types/node": "^20.6.4",
