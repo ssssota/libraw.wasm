@@ -16,7 +16,7 @@ importers:
         version: 20.6.4
       typescript:
         specifier: ^5.0.2
-        version: 5.2.2
+        version: 5.3.3
 
   test:
     devDependencies:
@@ -31,7 +31,7 @@ importers:
     dependencies:
       '@builder.io/qwik':
         specifier: ^1.2.6
-        version: 1.2.12(undici@5.25.3)
+        version: 1.2.12(undici@5.28.3)
       libraw.wasm:
         specifier: workspace:*
         version: link:..
@@ -41,7 +41,7 @@ importers:
     devDependencies:
       typescript:
         specifier: ^5.0.2
-        version: 5.2.2
+        version: 5.3.3
       vite:
         specifier: ^4.4.5
         version: 4.4.9(@types/node@20.6.4)
@@ -116,7 +116,7 @@ packages:
     dev: true
     optional: true
 
-  /@builder.io/qwik@1.2.12(undici@5.25.3):
+  /@builder.io/qwik@1.2.12(undici@5.28.3):
     resolution: {integrity: sha512-17dwM9BR0NJtrWLPlDygdYMlRkBAMEp8nkPIhhApSH5c/ESQMlbVg7Rm665WkBTf87+Epd+b7cC7Ky+8iYGjmA==}
     engines: {node: '>=16.8.0 <18.0.0 || >=18.11'}
     hasBin: true
@@ -124,7 +124,7 @@ packages:
       undici: ^5.14.0
     dependencies:
       csstype: 3.1.2
-      undici: 5.25.3
+      undici: 5.28.3
     dev: false
 
   /@esbuild/android-arm64@0.18.20:
@@ -325,8 +325,8 @@ packages:
     dev: true
     optional: true
 
-  /@fastify/busboy@2.0.0:
-    resolution: {integrity: sha512-JUFJad5lv7jxj926GPgymrWQxxjPYuJNiNjNMzqT+HiuP6Vl3dk5xzG+8sTX96np0ZAluvaMzPsjhHZ5rNuNQQ==}
+  /@fastify/busboy@2.1.0:
+    resolution: {integrity: sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA==}
     engines: {node: '>=14'}
     dev: false
 
@@ -651,8 +651,8 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /typescript@5.2.2:
-    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
+  /typescript@5.3.3:
+    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true
@@ -661,11 +661,11 @@ packages:
     resolution: {integrity: sha512-bRn3CsoojyNStCZe0BG0Mt4Nr/4KF+rhFlnNXybgqt5pXHNFRlqinSoQaTrGyzE4X8aHplSb+TorH+COin9Yxw==}
     dev: true
 
-  /undici@5.25.3:
-    resolution: {integrity: sha512-7lmhlz3K1+IKB6IUjkdzV2l0jKY8/0KguEMdEpzzXCug5pEGIp3DxUg0DEN65DrVoxHiRKpPORC/qzX+UglSkQ==}
+  /undici@5.28.3:
+    resolution: {integrity: sha512-3ItfzbrhDlINjaP0duwnNsKpDQk3acHI3gVJ1z4fmwMK31k5G9OVIAMLSIaP6w4FaGkaAkN6zaQO9LUvZ1t7VA==}
     engines: {node: '>=14.0'}
     dependencies:
-      '@fastify/busboy': 2.0.0
+      '@fastify/busboy': 2.1.0
     dev: false
 
   /vite-node@0.34.5(@types/node@20.6.4):
