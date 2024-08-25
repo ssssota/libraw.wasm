@@ -31,6 +31,7 @@ export const App = component$(() => {
 			<input
 				type="file"
 				onChange$={async (e) => {
+					if (!(e.target instanceof HTMLInputElement)) return;
 					const file = e.target.files?.[0];
 					if (!file) return;
 					const [lr, buffer] = await Promise.all([
@@ -92,18 +93,32 @@ export const App = component$(() => {
 				<dl>
 					{lensinfo && (
 						<>
-							<dt>Lens</dt>
-							<dd>{lensinfo.lens}</dd>
-							<dt>Min focal length (max aperture)</dt>
-							<dd>
-								{lensinfo.minFocal}mm (F/
-								{formatFNumber(lensinfo.maxAp4MinFocal)})
-							</dd>
-							<dt>Max focal length (max aperture)</dt>
-							<dd>
-								{lensinfo.maxFocal}mm (F/
-								{formatFNumber(lensinfo.maxAp4MaxFocal)})
-							</dd>
+							{lensinfo.lens && (
+								<>
+									<dt>Lens (Maker)</dt>
+									<dd>
+										{lensinfo.lens} ({lensinfo.lensMake})
+									</dd>
+								</>
+							)}
+							{lensinfo.minFocal && (
+								<>
+									<dt>Min focal length (max aperture)</dt>
+									<dd>
+										{lensinfo.minFocal}mm (F/
+										{formatFNumber(lensinfo.maxAp4MinFocal)})
+									</dd>
+								</>
+							)}
+							{lensinfo.maxFocal && (
+								<>
+									<dt>Max focal length (max aperture)</dt>
+									<dd>
+										{lensinfo.maxFocal}mm (F/
+										{formatFNumber(lensinfo.maxAp4MaxFocal)})
+									</dd>
+								</>
+							)}
 						</>
 					)}
 				</dl>

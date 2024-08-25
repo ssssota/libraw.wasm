@@ -1,7 +1,3 @@
 {
-	"recommendations": [
-		"vue.volar",
-		"vue.vscode-typescript-vue-plugin",
-		"biomejs.biome"
-	]
+	"recommendations": ["biomejs.biome"]
 }
