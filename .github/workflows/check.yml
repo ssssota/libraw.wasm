@@ -16,3 +16,4 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm build
       - run: pnpm check
+      - run: pnpm test

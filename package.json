@@ -1,7 +1,9 @@
 {
 	"scripts": {
 		"check": "biome check .",
-		"fmt": "biome check --write ."
+		"fmt": "biome check --write .",
+		"build": "pnpm -r build",
+		"test": "pnpm -r test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4"
