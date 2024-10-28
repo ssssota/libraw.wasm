@@ -167,7 +167,7 @@ async function main() {
 all: lib/libraw.wasm
 ${patchedMakefile}
 lib/libraw.wasm: \${LIB_OBJECTS}
-	emcc -Os -o lib/libraw.mjs -s MODULARIZE=1 -s 'EXPORTED_FUNCTIONS=${JSON.stringify(
+	$\{CC} -Os -o lib/libraw.mjs -s MODULARIZE=1 -s 'EXPORTED_FUNCTIONS=${JSON.stringify(
 		exportFunctions,
 	)}' -s ALLOW_MEMORY_GROWTH=1 \${LIB_OBJECTS}
 `;
@@ -181,14 +181,17 @@ lib/libraw.wasm: \${LIB_OBJECTS}
 		Object.values(customFunctions).join("\n"),
 	);
 
-	child_process.execFileSync("make", {
-		cwd: path.join(cwd, "LibRaw"),
-		stdio: "inherit",
-	});
+	try {
+		child_process.execFileSync("make", {
+			cwd: path.join(cwd, "LibRaw"),
+			stdio: "inherit",
+		});
+	} catch {}
 
 	await fs.rm(path.join(cwd, "LibRaw/Makefile"));
 	await fs.writeFile(librawCApiPath, librawCApi);
 
+	// move files to dist
 	await fs.mkdir(dist).catch(() => {});
 	await fs.rename(
 		path.join(cwd, "LibRaw/lib/libraw.mjs"),
