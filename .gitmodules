@@ -1,3 +1,6 @@
 [submodule "LibRaw"]
 	path = LibRaw
 	url = https://github.com/LibRaw/LibRaw.git
+[submodule "raw-samples"]
+	path = raw-samples
+	url = https://github.com/f-spot/raw-samples.git
