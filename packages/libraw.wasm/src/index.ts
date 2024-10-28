@@ -1,6 +1,6 @@
 // @ts-expect-error
 import initializeLibRawWasm from "./libraw.js";
-import {
+import type {
 	CharPtr,
 	ErrorCode,
 	Float,
@@ -2198,7 +2198,7 @@ export class LibRaw implements Disposable {
 		const zeroIndex = this.libraw.HEAPU8.indexOf(0, offset);
 		const length = Math.max(
 			0,
-			Math.min(dataLength ?? Infinity, zeroIndex - offset),
+			Math.min(dataLength ?? Number.POSITIVE_INFINITY, zeroIndex - offset),
 		);
 		const heap = new Uint8Array(this.libraw.HEAPU8.buffer, offset, length);
 		if (typeof ptr !== "number") ptr.ptr += dataLength ?? length;
