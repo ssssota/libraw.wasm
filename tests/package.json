@@ -1,13 +1,13 @@
 {
-  "type": "module",
-  "scripts": {
-    "test": "vitest"
-  },
-  "dependencies": {
-    "libraw.wasm": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^20.6.4",
-    "vitest": "^2.1.4"
-  }
+	"type": "module",
+	"scripts": {
+		"test": "vitest"
+	},
+	"dependencies": {
+		"libraw.wasm": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/node": "^20.6.4",
+		"vitest": "^2.1.4"
+	}
 }
