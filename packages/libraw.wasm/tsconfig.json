@@ -1,6 +1,8 @@
 {
 	"compilerOptions": {
 		"target": "esnext",
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
 		"lib": ["esnext", "dom"],
 		"strict": true,
 		"rootDir": "./src",

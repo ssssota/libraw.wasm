@@ -187,7 +187,7 @@ export class LibRaw implements Disposable {
 		const code = this.libraw._libraw_dcraw_process(this.lr);
 		if (code) throw this.error(code);
 	}
-	dcrawMakeMemImage() {
+	async dcrawMakeMemImage() {
 		const errcPtr = this.libraw._malloc(4);
 		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
@@ -198,7 +198,7 @@ export class LibRaw implements Disposable {
 		this.libraw._libraw_dcraw_clear_mem(ptr);
 		return ret;
 	}
-	dcrawMakeMemThumb() {
+	async dcrawMakeMemThumb() {
 		const errcPtr = this.libraw._malloc(4);
 		const ptr = this.libraw._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });

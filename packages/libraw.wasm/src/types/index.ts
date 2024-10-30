@@ -1,1 +1,1 @@
-export type * from "./c-api";
+export type * from "./c-api.js";

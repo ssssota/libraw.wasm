@@ -20,6 +20,9 @@ importers:
       typescript:
         specifier: ^5.0.2
         version: 5.4.2
+      vitest:
+        specifier: ^2.1.4
+        version: 2.1.4(@types/node@20.6.4)
 
   tests:
     dependencies:
