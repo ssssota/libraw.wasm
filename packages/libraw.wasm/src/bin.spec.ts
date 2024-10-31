@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { StructBuilder, typ } from "./bin.js";
+import { StructBuilder, readU32, typ } from "./bin.js";
 
 it("single field", () => {
 	/**
@@ -10,8 +10,8 @@ it("single field", () => {
 	 * ```
 	 */
 	const buf = new Uint8Array([0x01]);
-	const schem = StructBuilder().field("a", typ.u8).build({ buf });
-	expect(schem.a).toBe(1);
+	const struct = StructBuilder().field("a", typ.u8).build({ buf });
+	expect(struct.a).toBe(1);
 });
 it("multiple fields", () => {
 	/**
@@ -122,18 +122,49 @@ it("nested struct", () => {
 	/**
 	 * ```c
 	 * struct {
+	 *   uint8_t a;
 	 *   struct {
-	 *     uint8_t a;
+	 *     uint8_t b;
 	 *   } inner;
-	 *   uint8_t b;
+	 *   uint8_t c;
 	 * }
 	 * ```
 	 */
-	const buf = new Uint8Array([0x01, 0xff]);
+	const buf = new Uint8Array([0x01, 0x01, 0xff]);
 	const struct = StructBuilder()
-		.field("inner", StructBuilder().field("a", typ.u8))
-		.field("b", typ.u8)
+		.field("a", typ.u8)
+		.field("inner", StructBuilder().field("b", typ.u8))
+		.field("c", typ.u8)
 		.build({ buf });
-	expect(struct.inner.a).toBe(1);
-	expect(struct.b).toBe(255);
+	expect(struct.a).toBe(1);
+	expect(struct.inner.b).toBe(1);
+	expect(struct.c).toBe(255);
+});
+it("length from field", () => {
+	/**
+	 * ```c
+	 * typedef struct {
+	 *   uint8_t length;
+	 *   uint8_t *str;
+	 * } String;
+	 * ```
+	 */
+	// biome-ignore format: binary readability
+	const buf = new Uint8Array([
+		0x48, 0x65, 0x6c, 0x6c, 0x6f, // "Hello"
+		0x05, // length
+		0x00, 0x00, 0x00, 0x00, // str*
+	]);
+	const struct = StructBuilder()
+		.field("length", typ.u8)
+		.field("str", {
+			size: () => 4, // pointer size
+			build(opts, ctx) {
+				const { buf, offset = 0, endian = "little" } = opts;
+				const ptr = readU32(buf, offset, endian);
+				return new TextDecoder().decode(buf.slice(ptr, ptr + ctx.length));
+			},
+		})
+		.build({ buf, offset: 5 });
+	expect(struct.str).toBe("Hello");
 });

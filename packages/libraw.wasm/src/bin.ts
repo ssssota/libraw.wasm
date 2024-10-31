@@ -7,28 +7,30 @@ type Field<T extends ValueBuilder = ValueBuilder> = {
 };
 
 type BlankObject = NonNullable<unknown>;
-type FieldUnion<Fields extends Field[]> = Fields extends [
+type ObjFromFields<Fields extends Field[]> = Fields extends [
 	{ name: infer Name; builder: infer Builder },
 	...infer Rest,
 ]
 	? Name extends string
 		? Builder extends ValueBuilder<infer T>
 			? Rest extends Field[]
-				? { [K in Name]: T } & FieldUnion<Rest>
+				? { [K in Name]: T } & ObjFromFields<Rest>
 				: { [K in Name]: T }
 			: BlankObject
 		: BlankObject
 	: BlankObject;
 
-const view = (buf: Uint8Array) => new DataView(buf.buffer);
 type ValueBuilderOptions = {
 	buf: Uint8Array;
 	offset?: number;
 	endian?: "little" | "big";
 };
-interface ValueBuilder<T = unknown> {
-	readonly size: number;
-	build(opts: ValueBuilderOptions): T;
+interface ValueBuilder<
+	T = unknown,
+	Ctx extends Record<string, unknown> = Record<string, unknown>,
+> {
+	size(opts: ValueBuilderOptions): number;
+	build(opts: ValueBuilderOptions, ctx: Ctx): T;
 }
 
 export function StructBuilder(): Struct {
@@ -36,24 +38,25 @@ export function StructBuilder(): Struct {
 }
 class Struct<Fields extends Field[] = []> implements ValueBuilder {
 	private fields: Field[] = [];
-	get size() {
-		return this.fields.reduce((acc, f) => acc + f.builder.size, 0);
+	size(opts: ValueBuilderOptions) {
+		return this.fields.reduce((acc, f) => acc + f.builder.size(opts), 0);
 	}
 
 	field<Name extends string, T>(
 		name: Name,
-		builder: ValueBuilder<T>,
-	): Struct<[...Fields, { name: Name; builder: ValueBuilder<T> }]> {
+		builder: ValueBuilder<T, ObjFromFields<Fields>>,
+	): Struct<
+		[...Fields, { name: Name; builder: ValueBuilder<T, ObjFromFields<Fields>> }]
+	> {
 		this.fields.push({ name, builder });
-		return this as unknown as Struct<
-			[...Fields, { name: Name; builder: ValueBuilder<T> }]
-		>;
+		// @ts-expect-error
+		return this;
 	}
 
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const self = this;
-		return new Proxy(
+		const ret = new Proxy(
 			{},
 			{
 				get(_, prop) {
@@ -62,104 +65,104 @@ class Struct<Fields extends Field[] = []> implements ValueBuilder {
 					if (fieldIndex === -1) return undefined;
 					const fieldOffset = self.fields
 						.slice(0, fieldIndex)
-						.reduce((acc, f) => acc + f.builder.size, 0);
+						.reduce((acc, f) => acc + f.builder.size(opts), 0);
 					const field = self.fields[fieldIndex];
-					return field.builder.build({
-						buf,
-						offset: offset + fieldOffset,
-						endian,
-					});
+					return field.builder.build(
+						{ buf, offset: offset + fieldOffset, endian },
+						ret,
+					);
 				},
 			},
-		) as FieldUnion<Fields>;
+		) as ObjFromFields<Fields>;
+		return ret;
 	}
 }
 export const U8 = {
-	size: 1,
+	size: () => 1,
 	build(opts: { buf: Uint8Array; offset?: number }) {
 		const { buf, offset = 0 } = opts;
-		return view(buf).getUint8(offset);
+		return readU8(buf, offset);
 	},
 } as const satisfies ValueBuilder<number>;
 export const I8 = {
-	size: 1,
+	size: () => 1,
 	build(opts: { buf: Uint8Array; offset?: number }) {
 		const { buf, offset = 0 } = opts;
-		return view(buf).getInt8(offset);
+		return readI8(buf, offset);
 	},
 } as const satisfies ValueBuilder<number>;
 export const U16 = {
-	size: 2,
+	size: () => 2,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getUint16(offset, endian === "little");
+		return readU16(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const I16 = {
-	size: 2,
+	size: () => 2,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getInt16(offset, endian === "little");
+		return readI16(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const U32 = {
-	size: 4,
+	size: () => 4,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getUint32(offset, endian === "little");
+		return readU32(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const I32 = {
-	size: 4,
+	size: () => 4,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getInt32(offset, endian === "little");
+		return readI32(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const U64 = {
-	size: 8,
+	size: () => 8,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getBigUint64(offset, endian === "little");
+		return readU64(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<bigint>;
 export const I64 = {
-	size: 8,
+	size: () => 8,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getBigInt64(offset, endian === "little");
+		return readI64(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<bigint>;
 export const F32 = {
-	size: 4,
+	size: () => 4,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getFloat32(offset, endian === "little");
+		return readF32(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const F64 = {
-	size: 8,
+	size: () => 8,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
-		return view(buf).getFloat64(offset, endian === "little");
+		return readF64(buf, offset, endian);
 	},
 } as const satisfies ValueBuilder<number>;
 export const Bool = {
-	size: 1,
+	size: () => 1,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0 } = opts;
-		return !!view(buf).getUint8(offset);
+		return readBool(buf, offset);
 	},
 } as const satisfies ValueBuilder<boolean>;
 export const Char = {
-	size: 1,
+	size: () => 1,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0 } = opts;
-		return String.fromCharCode(view(buf).getUint8(offset));
+		return readChar(buf, offset);
 	},
 } as const satisfies ValueBuilder<string>;
 export const CharPointerAsString = {
-	size: 4,
+	size: () => 4,
 	build(opts: ValueBuilderOptions) {
 		const { buf, offset = 0, endian = "little" } = opts;
 		const ptr = view(buf).getUint32(offset, endian === "little");
@@ -170,15 +173,17 @@ export const CharPointerAsString = {
 export const SizedArray = <T>(
 	builder: ValueBuilder<T>,
 	size: number,
-): ValueBuilder<T[]> => ({
-	size: builder.size * size,
-	build(opts: ValueBuilderOptions) {
-		const { buf, offset = 0 } = opts;
-		return Array.from({ length: size }, (_, i) =>
-			builder.build({ buf, offset: offset + i * builder.size }),
-		);
-	},
-});
+): ValueBuilder<T[]> => {
+	return {
+		size: (opts: ValueBuilderOptions) => size * builder.size(opts),
+		build(opts: ValueBuilderOptions) {
+			const { buf, offset = 0 } = opts;
+			return Array.from({ length: size }, (_, i) =>
+				builder.build({ buf, offset: offset + i * builder.size(opts) }, {}),
+			);
+		},
+	};
+};
 
 export const typ = {
 	u8: U8,
@@ -196,3 +201,75 @@ export const typ = {
 	string: CharPointerAsString,
 	array: SizedArray,
 } as const satisfies { [K in Typ]: ValueBuilder } & Record<string, unknown>;
+
+export function view(buf: Uint8Array) {
+	return new DataView(buf.buffer);
+}
+export function readU8(buf: Uint8Array, offset = 0) {
+	return view(buf).getUint8(offset);
+}
+export function readI8(buf: Uint8Array, offset = 0) {
+	return view(buf).getInt8(offset);
+}
+export function readU16(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getUint16(offset, endian === "little");
+}
+export function readI16(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getInt16(offset, endian === "little");
+}
+export function readU32(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getUint32(offset, endian === "little");
+}
+export function readI32(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getInt32(offset, endian === "little");
+}
+export function readU64(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getBigUint64(offset, endian === "little");
+}
+export function readI64(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getBigInt64(offset, endian === "little");
+}
+export function readF32(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getFloat32(offset, endian === "little");
+}
+export function readF64(
+	buf: Uint8Array,
+	offset = 0,
+	endian: "little" | "big" = "little",
+) {
+	return view(buf).getFloat64(offset, endian === "little");
+}
+export function readBool(buf: Uint8Array, offset = 0) {
+	return !!view(buf).getUint8(offset);
+}
+export function readChar(buf: Uint8Array, offset = 0) {
+	return String.fromCharCode(view(buf).getUint8(offset));
+}
