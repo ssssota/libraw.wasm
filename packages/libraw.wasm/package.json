@@ -37,5 +37,8 @@
 		"@types/node": "^20.6.4",
 		"typescript": "^5.0.2",
 		"vitest": "^2.1.4"
+	},
+	"dependencies": {
+		"typed-cstruct": "^0.1.2"
 	}
 }

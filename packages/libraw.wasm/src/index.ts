@@ -1,3 +1,6 @@
+import { Struct } from "typed-cstruct";
+import * as typ from "typed-cstruct";
+
 // @ts-expect-error
 import initializeLibRawWasm from "./libraw.js";
 import type {
@@ -160,39 +163,35 @@ export class LibRaw implements Disposable {
 		);
 		dataHeap.set(new Uint8Array(buffer));
 		// open buffer
-		const code = this.libraw._libraw_open_buffer(
-			this.lr,
-			dataHeap.byteOffset,
-			buffer.byteLength,
+		this.handleError(
+			this.libraw._libraw_open_buffer(
+				this.lr,
+				dataHeap.byteOffset,
+				buffer.byteLength,
+			),
 		);
-		if (code) throw this.error(code);
 	}
 	async unpack() {
-		const code = this.libraw._libraw_unpack(this.lr);
-		if (code) throw this.error(code);
+		this.handleError(this.libraw._libraw_unpack(this.lr));
 	}
 	async unpackThumb() {
-		const code = this.libraw._libraw_unpack_thumb(this.lr);
-		if (code) throw this.error(code);
+		this.handleError(this.libraw._libraw_unpack_thumb(this.lr));
 	}
 	async unpackThumbEx(i: Int) {
-		const code = this.libraw._libraw_unpack_thumb_ex(this.lr, i);
-		if (code) throw this.error(code);
+		this.handleError(this.libraw._libraw_unpack_thumb_ex(this.lr, i));
 	}
 	async raw2image() {
-		const code = this.libraw._libraw_raw2image(this.lr);
-		if (code) throw this.error(code);
+		this.handleError(this.libraw._libraw_raw2image(this.lr));
 	}
 	async dcrawProcess() {
-		const code = this.libraw._libraw_dcraw_process(this.lr);
-		if (code) throw this.error(code);
+		this.handleError(this.libraw._libraw_dcraw_process(this.lr));
 	}
 	async dcrawMakeMemImage() {
 		const errcPtr = this.libraw._malloc(4);
 		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
 		this.libraw._free(errcPtr);
-		if (code) throw this.error(code as ErrorCode);
+		if (code) throw this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
 		const ret = this.readProcessedImage(ptr);
 		this.libraw._libraw_dcraw_clear_mem(ptr);
@@ -203,7 +202,7 @@ export class LibRaw implements Disposable {
 		const ptr = this.libraw._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
 		this.libraw._free(errcPtr);
-		if (code) throw this.error(code as ErrorCode);
+		if (code) throw this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
 		const ret = this.readProcessedImage(ptr);
 		this.libraw._libraw_dcraw_clear_mem(ptr);
@@ -333,7 +332,6 @@ export class LibRaw implements Disposable {
 		return new Uint16Array(this.libraw.HEAPU8.buffer, ptr);
 	}
 	getIParams(): IParams {
-		const ptr = { ptr: this.libraw._libraw_get_iparams(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L178-L198
 		 * ```c
@@ -358,46 +356,28 @@ export class LibRaw implements Disposable {
 		 * } libraw_iparams_t;
 		 * ```
 		 */
-		this.readU32(ptr); // guard
-		const make = this.readString(ptr, { length: 64 });
-		const model = this.readString(ptr, { length: 64 });
-		const software = this.readString(ptr, { length: 64 });
-		const normalizedMake = this.readString(ptr, { length: 64 });
-		const normalizedModel = this.readString(ptr, { length: 64 });
-		const makerIndex = this.readU32(ptr);
-		const rawCount = this.readU32(ptr);
-		const dngVersion = this.readU32(ptr);
-		const isFoveon = this.readU32(ptr);
-		const colors = this.readU32(ptr);
-		const filters = this.readU32(ptr);
-		const xtrans = Array.from({ length: 6 }, () =>
-			Array.from({ length: 6 }, () => this.readU8(ptr)),
-		);
-		const xtransAbs = Array.from({ length: 6 }, () =>
-			Array.from({ length: 6 }, () => this.readU8(ptr)),
-		);
-		const cdesc = this.readString(ptr, { length: 5 });
-		const xmplen = this.readU32(ptr);
-		const xmpdata = this.readString(ptr, { length: xmplen });
-
-		return {
-			make,
-			model,
-			software,
-			normalizedMake,
-			normalizedModel,
-			makerIndex,
-			rawCount,
-			dngVersion,
-			isFoveon,
-			colors,
-			filters,
-			xtrans,
-			xtransAbs,
-			cdesc,
-			xmplen,
-			xmpdata,
-		};
+		return new Struct()
+			.field("guard", typ.sizedArray(typ.char, 4))
+			.field("make", typ.sizedCharArrayAsString(64))
+			.field("model", typ.sizedCharArrayAsString(64))
+			.field("software", typ.sizedCharArrayAsString(64))
+			.field("normalizedMake", typ.sizedCharArrayAsString(64))
+			.field("normalizedModel", typ.sizedCharArrayAsString(64))
+			.field("makerIndex", typ.u32)
+			.field("rawCount", typ.u32)
+			.field("dngVersion", typ.u32)
+			.field("isFoveon", typ.u32)
+			.field("colors", typ.u32)
+			.field("filters", typ.u32)
+			.field("xtrans", typ.sizedArray(typ.sizedArray(typ.u8, 6), 6))
+			.field("xtransAbs", typ.sizedArray(typ.sizedArray(typ.u8, 6), 6))
+			.field("cdesc", typ.sizedCharArrayAsString(5))
+			.field("xmplen", typ.u32)
+			.field("xmpdata", typ.charPointerAsString)
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_iparams(this.lr),
+			});
 	}
 	getLensInfo(): LensInfo {
 		const ptr = { ptr: this.libraw._libraw_get_lensinfo(this.lr) };
@@ -2189,8 +2169,8 @@ export class LibRaw implements Disposable {
 			afcount,
 		};
 	}
-	private error(code: ErrorCode): string {
-		return this.readString(this.libraw._libraw_strerror(code));
+	private handleError(code: ErrorCode) {
+		if (code) throw Error(this.readString(this.libraw._libraw_strerror(code)));
 	}
 	private readString(ptr: MutablePtr | CharPtr, options?: { length?: number }) {
 		const { length: dataLength } = options ?? {};
