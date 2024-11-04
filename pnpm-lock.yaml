@@ -15,8 +15,8 @@ importers:
   packages/libraw.wasm:
     dependencies:
       typed-cstruct:
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.3.0
+        version: 0.3.0
     devDependencies:
       '@types/node':
         specifier: ^20.6.4
@@ -29,6 +29,10 @@ importers:
         version: 2.1.4(@types/node@20.6.4)
 
   playground:
+    dependencies:
+      libraw.wasm:
+        specifier: workspace:*
+        version: link:../packages/libraw.wasm
     devDependencies:
       '@sveltejs/adapter-auto':
         specifier: ^3.0.0
@@ -1218,8 +1222,8 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  typed-cstruct@0.2.1:
-    resolution: {integrity: sha512-EOqyzw3hJ7nQuX+iHSTx4KyrdvY6QQTLUZNXBxxz66SEwVNInKYG+aMQX+wspZgoQ6ZQUrF2L7MDGSMQ5//lAQ==}
+  typed-cstruct@0.3.0:
+    resolution: {integrity: sha512-+xKf98/9RNpYSSCiVdynfRO1G9SVCRP1vKA/SohOdGoWbsMYe40Y848IwZ5jwGMffss6qgLkDbXJz0f+BAYPUw==}
 
   typescript-eslint@8.12.2:
     resolution: {integrity: sha512-UbuVUWSrHVR03q9CWx+JDHeO6B/Hr9p4U5lRH++5tq/EbFq1faYZe50ZSBePptgfIKLEti0aPQ3hFgnPVcd8ZQ==}
@@ -2367,7 +2371,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  typed-cstruct@0.2.1: {}
+  typed-cstruct@0.3.0: {}
 
   typescript-eslint@8.12.2(eslint@9.14.0)(typescript@5.4.2):
     dependencies:

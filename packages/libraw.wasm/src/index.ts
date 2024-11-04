@@ -138,6 +138,15 @@ export type ThumbnailFormat =
 	| "rollei"
 	| "h265"
 	| "unknown";
+export type ProcessedImage = {
+	type: "jpeg" | "bitmap";
+	height: number;
+	width: number;
+	colors: number;
+	bits: number;
+	dataSize: number;
+	data: Uint8Array;
+};
 
 export class LibRaw implements Disposable {
 	private disposed = false;
@@ -208,7 +217,7 @@ export class LibRaw implements Disposable {
 		this.libraw._libraw_dcraw_clear_mem(ptr);
 		return ret;
 	}
-	private readProcessedImage(processed: LibRawProcessedImageT) {
+	private readProcessedImage(processed: LibRawProcessedImageT): ProcessedImage {
 		const ptr = { ptr: processed };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L170-L176
@@ -226,17 +235,16 @@ export class LibRaw implements Disposable {
 		 * } libraw_processed_image_t;
 		 * ```
 		 */
-		const type = this.readI32(ptr);
+		const type = this.readU32(ptr);
 		const height = this.readU16(ptr);
 		const width = this.readU16(ptr);
 		const colors = this.readU16(ptr);
 		const bits = this.readU16(ptr);
 		const dataSize = this.readU32(ptr);
+		const dataPtr = this.readU32(ptr);
 		const data = new Uint8Array(
-			this.libraw.HEAPU8.buffer,
-			this.readU32(ptr),
-			dataSize,
-		).slice();
+			this.libraw.HEAPU8.buffer.slice(dataPtr, dataPtr + dataSize),
+		);
 		return {
 			type: type === 1 ? "jpeg" : "bitmap",
 			height,
@@ -374,7 +382,7 @@ export class LibRaw implements Disposable {
 			.field("cdesc", typ.sizedCharArrayAsString(5))
 			.field("xmplen", typ.u32)
 			.field("xmpdata", typ.charPointerAsString)
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_iparams(this.lr),
 			});
@@ -513,7 +521,7 @@ export class LibRaw implements Disposable {
 			.field("nikon", nikon)
 			.field("dng", dng)
 			.field("makernotes", makernotes)
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_lensinfo(this.lr),
 			});
@@ -521,7 +529,7 @@ export class LibRaw implements Disposable {
 	getImgOther(): ImgOther {
 		const gpsTyp: typ.ValueBuilder<[number, number, number]> = {
 			size: typ.f32.size * 3,
-			build(opts: typ.ValueBuilderOptions) {
+			read(opts: typ.ValueBuilderOptions) {
 				const offset = opts.offset ?? 0;
 				return [
 					typ.readF32(opts.buf, offset, opts.endian),
@@ -582,7 +590,7 @@ export class LibRaw implements Disposable {
 			.field("desc", typ.sizedCharArrayAsString(512))
 			.field("artist", typ.sizedCharArrayAsString(64))
 			.field("analogbalance", typ.sizedArray(typ.f32, 4))
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_imgother(this.lr),
 			});
@@ -621,24 +629,28 @@ export class LibRaw implements Disposable {
 		 * } libraw_thumbnail_t;
 		 * ```
 		 */
-		const tformat = this.getThumbnailFormat(this.readU32(ptr));
-		const twidth = this.readU16(ptr);
-		const theight = this.readU16(ptr);
-		const tlength = this.readU32(ptr);
-		const tcolors = this.readI32(ptr);
-		const thumb = new Uint8Array(
-			this.libraw.HEAPU8.buffer,
-			this.readU32(ptr),
-			tlength,
-		).slice();
-		return {
-			tformat,
-			twidth,
-			theight,
-			tlength,
-			tcolors,
-			thumb,
-		};
+		return new Struct()
+			.field(
+				"tformat",
+				typ.enumLike(typ.u32, {
+					0: "unknown",
+					1: "jpeg",
+					2: "bitmap",
+					3: "bitmap16",
+					4: "layer",
+					5: "rollei",
+					6: "h265",
+				} as const),
+			)
+			.field("twidth", typ.u16)
+			.field("theight", typ.u16)
+			.field("tlength", typ.u32)
+			.field("tcolors", typ.i32)
+			.field("thumb", typ.pointerArrayFromLengthField(typ.u8, "tlength"))
+			.read({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_thumbnail(this.lr),
+			});
 	}
 	private getThumbnailFormat(tformat: number): ThumbnailFormat {
 		/**
@@ -700,7 +712,7 @@ export class LibRaw implements Disposable {
 			.field("imageStabilization", typ.i16)
 			.field("bodySerial", typ.sizedCharArrayAsString(64))
 			.field("internalBodySerial", typ.sizedCharArrayAsString(64))
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_shootinginfo(this.lr),
 			});
@@ -878,7 +890,7 @@ export class LibRaw implements Disposable {
 			.field("upperOpticalBlack", areaTyp)
 			.field("activeArea", areaTyp)
 			.field("isoGain", typ.sizedArray(typ.i16, 2))
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_canon_makernotes(this.lr),
 			});
@@ -1054,7 +1066,7 @@ export class LibRaw implements Disposable {
 			.field("rollAngle", typ.f64)
 			.field("pitchAngle", typ.f64)
 			.field("yawAngle", typ.f64)
-			.build({
+			.read({
 				buf: this.libraw.HEAPU8,
 				offset: this.libraw._libraw_get_nikon_makernotes(this.lr),
 			});
