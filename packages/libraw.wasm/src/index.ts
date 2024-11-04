@@ -71,7 +71,7 @@ export type MakernotesLens = {
 	cameraFormat: number;
 	cameraMount: number;
 	body: string;
-	focalType: number;
+	focalType: "unknown" | "fixed focal" | "zoom";
 	lensFeaturesPre: string;
 	lensFeaturesSuf: string;
 	minFocal: number;
@@ -380,30 +380,6 @@ export class LibRaw implements Disposable {
 			});
 	}
 	getLensInfo(): LensInfo {
-		const ptr = { ptr: this.libraw._libraw_get_lensinfo(this.lr) };
-		/**
-		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1018-L1026
-		 * ```c
-		 * typedef struct {
-		 *   float MinFocal, MaxFocal, MaxAp4MinFocal, MaxAp4MaxFocal, EXIF_MaxAp;
-		 *   char LensMake[128], Lens[128], LensSerial[128], InternalLensSerial[128];
-		 *   ushort FocalLengthIn35mmFormat;
-		 *   libraw_nikonlens_t nikon;
-		 *   libraw_dnglens_t dng;
-		 *   libraw_makernotes_lens_t makernotes;
-		 * } libraw_lensinfo_t;
-		 * ```
-		 */
-		const minFocal = this.readF32(ptr);
-		const maxFocal = this.readF32(ptr);
-		const maxAp4MinFocal = this.readF32(ptr);
-		const maxAp4MaxFocal = this.readF32(ptr);
-		const exifMaxAp = this.readF32(ptr);
-		const lensMake = this.readString(ptr, { length: 128 });
-		const lens = this.readString(ptr, { length: 128 });
-		const lensSerial = this.readString(ptr, { length: 128 });
-		const internalLensSerial = this.readString(ptr, { length: 128 });
-		const focalLengthIn35mmFormat = this.readU16(ptr);
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1007-L1011
 		 * ```c
@@ -413,13 +389,13 @@ export class LibRaw implements Disposable {
 		 * } libraw_nikonlens_t;
 		 * ```
 		 */
-		const nikon: NikonLens = {
-			effectiveMaxAp: this.readF32(ptr),
-			lensIDNumber: this.readU8(ptr),
-			lensFStops: this.readU8(ptr),
-			mcuVersion: this.readU8(ptr),
-			lensType: this.readU8(ptr),
-		};
+		const nikon = new Struct()
+			.field("effectiveMaxAp", typ.f32)
+			.field("lensIDNumber", typ.u8)
+			.field("lensFStops", typ.u8)
+			.field("mcuVersion", typ.u8)
+			.field("lensType", typ.u8);
+
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1013-L1016
 		 * ```c
@@ -428,12 +404,12 @@ export class LibRaw implements Disposable {
 		 * } libraw_dnglens_t;
 		 * ```
 		 */
-		const dng: DngLens = {
-			minFocal: this.readF32(ptr),
-			maxFocal: this.readF32(ptr),
-			maxAp4MinFocal: this.readF32(ptr),
-			maxAp4MaxFocal: this.readF32(ptr),
-		};
+		const dng = new Struct()
+			.field("minFocal", typ.f32)
+			.field("maxFocal", typ.f32)
+			.field("maxAp4MinFocal", typ.f32)
+			.field("maxAp4MaxFocal", typ.f32);
+
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L977-L1005
 		 * ```c
@@ -467,61 +443,93 @@ export class LibRaw implements Disposable {
 		 * } libraw_makernotes_lens_t;
 		 * ```
 		 */
-		const makernotes: MakernotesLens = {
-			lensID: this.readU64(ptr),
-			lens: this.readString(ptr, { length: 128 }),
-			lensFormat: this.readU16(ptr),
-			lensMount: this.readU16(ptr),
-			camID: this.readU64(ptr),
-			cameraFormat: this.readU16(ptr),
-			cameraMount: this.readU16(ptr),
-			body: this.readString(ptr, { length: 64 }),
-			focalType: this.readI16(ptr),
-			lensFeaturesPre: this.readString(ptr, { length: 16 }),
-			lensFeaturesSuf: this.readString(ptr, { length: 16 }),
-			minFocal: this.readF32(ptr),
-			maxFocal: this.readF32(ptr),
-			maxAp4MinFocal: this.readF32(ptr),
-			maxAp4MaxFocal: this.readF32(ptr),
-			minAp4MinFocal: this.readF32(ptr),
-			minAp4MaxFocal: this.readF32(ptr),
-			maxAp: this.readF32(ptr),
-			minAp: this.readF32(ptr),
-			curFocal: this.readF32(ptr),
-			curAp: this.readF32(ptr),
-			maxAp4CurFocal: this.readF32(ptr),
-			minAp4CurFocal: this.readF32(ptr),
-			minFocusDistance: this.readF32(ptr),
-			focusRangeIndex: this.readF32(ptr),
-			lensFStops: this.readF32(ptr),
-			teleconverterID: this.readU64(ptr),
-			teleconverter: this.readString(ptr, { length: 128 }),
-			adapterID: this.readU64(ptr),
-			adapter: this.readString(ptr, { length: 128 }),
-			attachmentID: this.readU64(ptr),
-			attachment: this.readString(ptr, { length: 128 }),
-			focalUnits: this.readU16(ptr),
-			focalLengthIn35mmFormat: this.readF32(ptr),
-		};
-
-		return {
-			minFocal,
-			maxFocal,
-			maxAp4MinFocal,
-			maxAp4MaxFocal,
-			exifMaxAp,
-			lensMake,
-			lens,
-			lensSerial,
-			internalLensSerial,
-			focalLengthIn35mmFormat,
-			nikon,
-			dng,
-			makernotes,
-		};
+		const makernotes = new Struct()
+			.field("lensID", typ.u64)
+			.field("lens", typ.sizedCharArrayAsString(128))
+			.field("lensFormat", typ.u16)
+			.field("lensMount", typ.u16)
+			.field("camID", typ.u64)
+			.field("cameraFormat", typ.u16)
+			.field("cameraMount", typ.u16)
+			.field("body", typ.sizedCharArrayAsString(64))
+			.field(
+				"focalType",
+				typ.enumLike(typ.i16, {
+					[-1]: "unknown",
+					0: "unknown",
+					1: "fixed focal",
+					2: "zoom",
+				} as const),
+			)
+			.field("lensFeaturesPre", typ.sizedCharArrayAsString(16))
+			.field("lensFeaturesSuf", typ.sizedCharArrayAsString(16))
+			.field("minFocal", typ.f32)
+			.field("maxFocal", typ.f32)
+			.field("maxAp4MinFocal", typ.f32)
+			.field("maxAp4MaxFocal", typ.f32)
+			.field("minAp4MinFocal", typ.f32)
+			.field("minAp4MaxFocal", typ.f32)
+			.field("maxAp", typ.f32)
+			.field("minAp", typ.f32)
+			.field("curFocal", typ.f32)
+			.field("curAp", typ.f32)
+			.field("maxAp4CurFocal", typ.f32)
+			.field("minAp4CurFocal", typ.f32)
+			.field("minFocusDistance", typ.f32)
+			.field("focusRangeIndex", typ.f32)
+			.field("lensFStops", typ.f32)
+			.field("teleconverterID", typ.u64)
+			.field("teleconverter", typ.sizedCharArrayAsString(128))
+			.field("adapterID", typ.u64)
+			.field("adapter", typ.sizedCharArrayAsString(128))
+			.field("attachmentID", typ.u64)
+			.field("attachment", typ.sizedCharArrayAsString(128))
+			.field("focalUnits", typ.u16)
+			.field("focalLengthIn35mmFormat", typ.f32);
+		/**
+		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1018-L1026
+		 * ```c
+		 * typedef struct {
+		 *   float MinFocal, MaxFocal, MaxAp4MinFocal, MaxAp4MaxFocal, EXIF_MaxAp;
+		 *   char LensMake[128], Lens[128], LensSerial[128], InternalLensSerial[128];
+		 *   ushort FocalLengthIn35mmFormat;
+		 *   libraw_nikonlens_t nikon;
+		 *   libraw_dnglens_t dng;
+		 *   libraw_makernotes_lens_t makernotes;
+		 * } libraw_lensinfo_t;
+		 * ```
+		 */
+		return new Struct()
+			.field("minFocal", typ.f32)
+			.field("maxFocal", typ.f32)
+			.field("maxAp4MinFocal", typ.f32)
+			.field("maxAp4MaxFocal", typ.f32)
+			.field("exifMaxAp", typ.f32)
+			.field("lensMake", typ.sizedCharArrayAsString(128))
+			.field("lens", typ.sizedCharArrayAsString(128))
+			.field("lensSerial", typ.sizedCharArrayAsString(128))
+			.field("internalLensSerial", typ.sizedCharArrayAsString(128))
+			.field("focalLengthIn35mmFormat", typ.u16)
+			.field("nikon", nikon)
+			.field("dng", dng)
+			.field("makernotes", makernotes)
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_lensinfo(this.lr),
+			});
 	}
 	getImgOther(): ImgOther {
-		const ptr = { ptr: this.libraw._libraw_get_imgother(this.lr) };
+		const gpsTyp: typ.ValueBuilder<[number, number, number]> = {
+			size: typ.f32.size * 3,
+			build(opts: typ.ValueBuilderOptions) {
+				const offset = opts.offset ?? 0;
+				return [
+					typ.readF32(opts.buf, offset, opts.endian),
+					typ.readF32(opts.buf, offset + 4, opts.endian),
+					typ.readF32(opts.buf, offset + 8, opts.endian),
+				] as const;
+			},
+		};
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L838-L850
 		 * ```c
@@ -538,15 +546,6 @@ export class LibRaw implements Disposable {
 		 *   float analogbalance[4];
 		 * } libraw_imgother_t;
 		 * ```
-		 */
-		const isoSpeed = this.readF32(ptr);
-		const shutter = this.readF32(ptr);
-		const aperture = this.readF32(ptr);
-		const focalLen = this.readF32(ptr);
-		const timestamp = this.readU32(ptr);
-		const shotOrder = this.readU32(ptr);
-		const gpsdata = Array.from({ length: 32 }, () => this.readU32(ptr));
-		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L828-L836
 		 * ```c
 		 * typedef struct {
@@ -557,46 +556,36 @@ export class LibRaw implements Disposable {
 		 *   char  altref, latref, longref, gpsstatus;
 		 *   char  gpsparsed;
 		 * } libraw_gps_info_t;
+		 * ```
 		 */
-		const parsedGps: ParsedGps = {
-			latitude: [
-				this.readF32(ptr), // Deg
-				this.readF32(ptr), // min
-				this.readF32(ptr), // sec
-			],
-			longitude: [
-				this.readF32(ptr), // Deg
-				this.readF32(ptr), // min
-				this.readF32(ptr), // sec
-			],
-			gpstimestamp: [
-				this.readF32(ptr), // Deg
-				this.readF32(ptr), // min
-				this.readF32(ptr), // sec
-			],
-			altitude: this.readF32(ptr),
-			altref: this.readU8(ptr),
-			latref: this.readU8(ptr),
-			longref: this.readU8(ptr),
-			gpsstatus: this.readU8(ptr),
-			gpsparsed: this.readU8(ptr),
-		};
-		const desc = this.readString(ptr, { length: 512 });
-		const artist = this.readString(ptr, { length: 64 });
-		const analogbalance = Array.from({ length: 4 }, () => this.readF32(ptr));
-		return {
-			isoSpeed,
-			shutter,
-			aperture,
-			focalLen,
-			timestamp,
-			shotOrder,
-			gpsdata,
-			parsedGps,
-			desc,
-			artist,
-			analogbalance,
-		};
+		return new Struct()
+			.field("isoSpeed", typ.f32)
+			.field("shutter", typ.f32)
+			.field("aperture", typ.f32)
+			.field("focalLen", typ.f32)
+			.field("timestamp", typ.u32)
+			.field("shotOrder", typ.u32)
+			.field("gpsdata", typ.sizedArray(typ.u32, 32))
+			.field(
+				"parsedGps",
+				new Struct()
+					.field("latitude", gpsTyp)
+					.field("longitude", gpsTyp)
+					.field("gpstimestamp", gpsTyp)
+					.field("altitude", typ.f32)
+					.field("altref", typ.u8)
+					.field("latref", typ.u8)
+					.field("longref", typ.u8)
+					.field("gpsstatus", typ.u8)
+					.field("gpsparsed", typ.u8),
+			)
+			.field("desc", typ.sizedCharArrayAsString(512))
+			.field("artist", typ.sizedCharArrayAsString(64))
+			.field("analogbalance", typ.sizedArray(typ.f32, 4))
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_imgother(this.lr),
+			});
 	}
 	// getDecoderInfo() {
 	// 	/**
@@ -684,7 +673,6 @@ export class LibRaw implements Disposable {
 		}
 	}
 	getShootingInfo() {
-		const ptr = { ptr: this.libraw._libraw_get_shootinginfo(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1045-L1057
 		 * ```c
@@ -702,29 +690,22 @@ export class LibRaw implements Disposable {
 		 * } libraw_shootinginfo_t;
 		 * ```
 		 */
-		const driveMode = this.readI16(ptr);
-		const focusMode = this.readI16(ptr);
-		const meteringMode = this.readI16(ptr);
-		const afPoint = this.readI16(ptr);
-		const exposureMode = this.readI16(ptr);
-		const exposureProgram = this.readI16(ptr);
-		const imageStabilization = this.readI16(ptr);
-		const bodySerial = this.readString(ptr, { length: 64 });
-		const internalBodySerial = this.readString(ptr, { length: 64 });
-		return {
-			driveMode,
-			focusMode,
-			meteringMode,
-			afPoint,
-			exposureMode,
-			exposureProgram,
-			imageStabilization,
-			bodySerial,
-			internalBodySerial,
-		};
+		return new Struct()
+			.field("driveMode", typ.i16)
+			.field("focusMode", typ.i16)
+			.field("meteringMode", typ.i16)
+			.field("afPoint", typ.i16)
+			.field("exposureMode", typ.i16)
+			.field("exposureProgram", typ.i16)
+			.field("imageStabilization", typ.i16)
+			.field("bodySerial", typ.sizedCharArrayAsString(64))
+			.field("internalBodySerial", typ.sizedCharArrayAsString(64))
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_shootinginfo(this.lr),
+			});
 	}
 	getMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1028-L1043
 		 * ```c
@@ -762,7 +743,11 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getCanonMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_canon_makernotes(this.lr) };
+		const areaTyp = new Struct()
+			.field("t", typ.i16)
+			.field("l", typ.i16)
+			.field("b", typ.i16)
+			.field("r", typ.i16);
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L260-L319
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L217-L220
@@ -831,351 +816,248 @@ export class LibRaw implements Disposable {
 		 * } libraw_canon_makernotes_t;
 		 * ```
 		 */
-		const colorDataVer = this.readI32(ptr);
-		const colorDataSubVer = this.readI32(ptr);
-		const specularWhiteLevel = this.readI32(ptr);
-		const normalWhiteLevel = this.readI32(ptr);
-		const channelBlackLevel = [
-			this.readI32(ptr),
-			this.readI32(ptr),
-			this.readI32(ptr),
-			this.readI32(ptr),
-		] as const;
-		const averageBlackLevel = this.readI32(ptr);
-		const multishot = [
-			this.readU32(ptr),
-			this.readU32(ptr),
-			this.readU32(ptr),
-			this.readU32(ptr),
-		] as const;
-		const meteringMode = this.readI16(ptr);
-		const spotMeteringMode = this.readI16(ptr);
-		const flashMeteringMode = this.readU8(ptr);
-		const flashExposureLock = this.readI16(ptr);
-		const exposureMode = this.readI16(ptr);
-		const aeSetting = this.readI16(ptr);
-		const imageStabilization = this.readI16(ptr);
-		const flashMode = this.readI16(ptr);
-		const flashActivity = this.readI16(ptr);
-		const flashBits = this.readI16(ptr);
-		const manualFlashOutput = this.readI16(ptr);
-		const flashOutput = this.readI16(ptr);
-		const flashGuideNumber = this.readI16(ptr);
-		const continuousDrive = this.readI16(ptr);
-		const sensorWidth = this.readI16(ptr);
-		const sensorHeight = this.readI16(ptr);
-		const afMicroAdjMode = this.readI32(ptr);
-		const afMicroAdjValue = this.readF32(ptr);
-		const makernotesFlip = this.readI16(ptr);
-		const recordMode = this.readI16(ptr);
-		const srawQuality = this.readI16(ptr);
-		const wbi = this.readU32(ptr);
-		const rfLensID = this.readI16(ptr);
-		const autoLightingOptimizer = this.readI32(ptr);
-		const highlightTonePriority = this.readI32(ptr);
-		const quality = this.readI16(ptr);
-		const canonLog = this.readI32(ptr);
-		const defaultCropAbsolute = {
-			t: this.readI16(ptr),
-			l: this.readI16(ptr),
-			b: this.readI16(ptr),
-			r: this.readI16(ptr),
-		};
-		const recommendedImageArea = {
-			t: this.readI16(ptr),
-			l: this.readI16(ptr),
-			b: this.readI16(ptr),
-			r: this.readI16(ptr),
-		};
-		const leftOpticalBlack = {
-			t: this.readI16(ptr),
-			l: this.readI16(ptr),
-			b: this.readI16(ptr),
-			r: this.readI16(ptr),
-		};
-		const upperOpticalBlack = {
-			t: this.readI16(ptr),
-			l: this.readI16(ptr),
-			b: this.readI16(ptr),
-			r: this.readI16(ptr),
-		};
-		const activeArea = {
-			t: this.readI16(ptr),
-			l: this.readI16(ptr),
-			b: this.readI16(ptr),
-			r: this.readI16(ptr),
-		};
-		const isoGain = [this.readI16(ptr), this.readI16(ptr)] as const;
-		return {
-			colorDataVer,
-			colorDataSubVer,
-			specularWhiteLevel,
-			normalWhiteLevel,
-			channelBlackLevel,
-			averageBlackLevel,
-			multishot,
-			meteringMode,
-			spotMeteringMode,
-			flashMeteringMode,
-			flashExposureLock,
-			exposureMode,
-			aeSetting,
-			imageStabilization,
-			flashMode,
-			flashActivity,
-			flashBits,
-			manualFlashOutput,
-			flashOutput,
-			flashGuideNumber,
-			continuousDrive,
-			sensorWidth,
-			sensorHeight,
-			afMicroAdjMode,
-			afMicroAdjValue,
-			makernotesFlip,
-			recordMode,
-			srawQuality,
-			wbi,
-			rfLensID,
-			autoLightingOptimizer,
-			highlightTonePriority,
-			quality,
-			canonLog,
-			defaultCropAbsolute,
-			recommendedImageArea,
-			leftOpticalBlack,
-			upperOpticalBlack,
-			activeArea,
-			isoGain,
-		};
+		return new Struct()
+			.field("colorDataVer", typ.i32)
+			.field("colorDataSubVer", typ.i32)
+			.field("specularWhiteLevel", typ.i32)
+			.field("normalWhiteLevel", typ.i32)
+			.field("channelBlackLevel", typ.sizedArray(typ.i32, 4))
+			.field("averageBlackLevel", typ.i32)
+			.field("multishot", typ.sizedArray(typ.u32, 4))
+			.field("meteringMode", typ.i16)
+			.field("spotMeteringMode", typ.i16)
+			.field("flashMeteringMode", typ.u8)
+			.field("flashExposureLock", typ.i16)
+			.field("exposureMode", typ.i16)
+			.field("aeSetting", typ.i16)
+			.field("imageStabilization", typ.i16)
+			.field("flashMode", typ.i16)
+			.field("flashActivity", typ.i16)
+			.field("flashBits", typ.i16)
+			.field("manualFlashOutput", typ.i16)
+			.field("flashOutput", typ.i16)
+			.field("flashGuideNumber", typ.i16)
+			.field("continuousDrive", typ.i16)
+			.field("sensorWidth", typ.i16)
+			.field("sensorHeight", typ.i16)
+			.field("afMicroAdjMode", typ.i32)
+			.field("afMicroAdjValue", typ.f32)
+			.field("makernotesFlip", typ.i16)
+			.field("recordMode", typ.i16)
+			.field("srawQuality", typ.i16)
+			.field("wbi", typ.u32)
+			.field("rfLensID", typ.i16)
+			.field("autoLightingOptimizer", typ.i32)
+			.field("highlightTonePriority", typ.i32)
+			.field(
+				"quality",
+				typ.enumLike(typ.i16, {
+					[-1]: "n/a",
+					1: "economy",
+					2: "normal",
+					3: "fine",
+					4: "raw",
+					5: "superfine",
+					7: "craw",
+					130: "normal movie, crm lightraw",
+					131: "crm standardraw",
+				} as const),
+			)
+			.field(
+				"canonLog",
+				typ.enumLike(typ.i32, {
+					0: "off",
+					1: "clogv1",
+					2: "clogv2",
+					3: "clogv3",
+				} as const),
+			)
+			.field("defaultCropAbsolute", areaTyp)
+			.field("recommendedImageArea", areaTyp)
+			.field("leftOpticalBlack", areaTyp)
+			.field("upperOpticalBlack", areaTyp)
+			.field("activeArea", areaTyp)
+			.field("isoGain", typ.sizedArray(typ.i16, 2))
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_canon_makernotes(this.lr),
+			});
 	}
 	getNikonMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_nikon_makernotes(this.lr) };
 		/**
-		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L446-L517
-		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L441-L444
+		 * @see https://github.com/LibRaw/LibRaw/blob/9bcb8a1d9593ba67e4eb67fed716efc5e1353d5c/libraw/libraw_types.h#L448-L522
+		 * @see https://github.com/LibRaw/LibRaw/blob/9bcb8a1d9593ba67e4eb67fed716efc5e1353d5c/libraw/libraw_types.h#L443-L446
+		 * ```c
 		 * typedef struct {
 		 *   ushort cleft, ctop, cwidth, cheight;
 		 * } libraw_sensor_highspeed_crop_t;
-		 * typedef struct {
-		 *   double ExposureBracketValue;
-		 *   ushort ActiveDLighting;
-		 *   ushort ShootingMode;
-		 *   // stabilization
-		 *   uchar ImageStabilization[7];
-		 *   uchar VibrationReduction;
-		 *   uchar VRMode;
-		 *   // flash
-		 *   char  FlashSetting[13];
-		 *   char  FlashType[20];
-		 *   uchar FlashExposureCompensation[4];
-		 *   uchar ExternalFlashExposureComp[4];
-		 *   uchar FlashExposureBracketValue[4];
-		 *   uchar FlashMode;
-		 *   signed char FlashExposureCompensation2;
-		 *   signed char FlashExposureCompensation3;
-		 *   signed char FlashExposureCompensation4;
-		 *   uchar  FlashSource;
-		 *   uchar  FlashFirmware[2];
-		 *   uchar  ExternalFlashFlags;
-		 *   uchar  FlashControlCommanderMode;
-		 *   uchar  FlashOutputAndCompensation;
-		 *   uchar  FlashFocalLength;
-		 *   uchar  FlashGNDistance;
-		 *   uchar  FlashGroupControlMode[4];
-		 *   uchar  FlashGroupOutputAndCompensation[4];
-		 *   uchar  FlashColorFilter;
-		 *
-		 *   // NEF compression, comments follow those for ExifTool tag 0x0093:
-		 *   // 1: Lossy (type 1)
-		 *   // 2: Uncompressed
-		 *   // 3: Lossless
-		 *   // 4: Lossy (type 2)
-		 *   // 5: Striped packed 12-bit
-		 *   // 6: Uncompressed (14-bit reduced to 12-bit)
-		 *   // 7: Unpacked 12-bit
-		 *   // 8: Small raw
-		 *   // 9: Packed 12-bit
-		 *   // 10: Packed 14-bit
-		 *   // 13: High Efficiency  (HE)
-		 *   // 14: High Efficiency* (HE*)
-		 *   ushort NEFCompression;
-		 *
-		 *   int    ExposureMode;
-		 *   int    ExposureProgram;
-		 *   int    nMEshots;
-		 *   int    MEgainOn;
-		 *   double ME_WB[4];
-		 *   uchar  AFFineTune;
-		 *   uchar  AFFineTuneIndex;
-		 *   int8_t AFFineTuneAdj;
-		 *   unsigned LensDataVersion;
-		 *   unsigned FlashInfoVersion;
-		 *   unsigned ColorBalanceVersion;
-		 *   uchar key;
-		 *   ushort NEFBitDepth[4];
-		 *   ushort HighSpeedCropFormat; // 1 -> 1.3x; 2 -> DX; 3 -> 5:4; 4 -> 3:2; 6 ->
-		 *   														//  16:9; 11 -> FX uncropped; 12 -> DX uncropped;
-		 *   														//  17 -> 1:1
-		 *   libraw_sensor_highspeed_crop_t SensorHighSpeedCrop;
-		 *   ushort SensorWidth;
-		 *   ushort SensorHeight;
-		 *   ushort Active_D_Lighting;
-		 *   unsigned ShotInfoVersion;
-		 *   short MakernotesFlip;
-		 *   double RollAngle;  // positive is clockwise, CW
-		 *   double PitchAngle; // positive is upwords
-		 *   double YawAngle;   // positive is to the right
+		 * typedef struct
+		 * {
+		 * 	double ExposureBracketValue;
+		 * 	ushort ActiveDLighting;
+		 * 	ushort ShootingMode;
+		 * 	// stabilization
+		 * 	uchar ImageStabilization[7];
+		 * 	uchar VibrationReduction;
+		 * 	uchar VRMode;
+		 * 	// flash
+		 * 	char  FlashSetting[13];
+		 * 	char  FlashType[20];
+		 * 	uchar FlashExposureCompensation[4];
+		 * 	uchar ExternalFlashExposureComp[4];
+		 * 	uchar FlashExposureBracketValue[4];
+		 * 	uchar FlashMode;
+		 * 	signed char FlashExposureCompensation2;
+		 * 	signed char FlashExposureCompensation3;
+		 * 	signed char FlashExposureCompensation4;
+		 * 	uchar  FlashSource;
+		 * 	uchar  FlashFirmware[2];
+		 * 	uchar  ExternalFlashFlags;
+		 * 	uchar  FlashControlCommanderMode;
+		 * 	uchar  FlashOutputAndCompensation;
+		 * 	uchar  FlashFocalLength;
+		 * 	uchar  FlashGNDistance;
+		 * 	uchar  FlashGroupControlMode[4];
+		 * 	uchar  FlashGroupOutputAndCompensation[4];
+		 * 	uchar  FlashColorFilter;
+
+		 * // NEF compression, comments follow those for ExifTool tag 0x0093:
+		 * // 1: Lossy (type 1)
+		 * // 2: Uncompressed
+		 * // 3: Lossless
+		 * // 4: Lossy (type 2)
+		 * // 5: Striped packed 12-bit
+		 * // 6: Uncompressed (14-bit reduced to 12-bit)
+		 * // 7: Unpacked 12-bit
+		 * // 8: Small raw
+		 * // 9: Packed 12-bit
+		 * // 10: Packed 14-bit
+		 * // 13: High Efficiency  (HE)
+		 * // 14: High Efficiency* (HE*)
+		 * 	ushort NEFCompression;
+		 * int    ExposureMode;
+		 * 	int    ExposureProgram;
+		 * 	int    nMEshots;
+		 * 	int    MEgainOn;
+		 * 	double ME_WB[4];
+		 * 	uchar  AFFineTune;
+		 * 	uchar  AFFineTuneIndex;
+		 * 	int8_t AFFineTuneAdj;
+		 * 	unsigned LensDataVersion;
+		 * 	unsigned FlashInfoVersion;
+		 * 	unsigned ColorBalanceVersion;
+		 * 	uchar key;
+		 * 	ushort NEFBitDepth[4];
+		 * 	ushort HighSpeedCropFormat; // 1 -> 1.3x; 2 -> DX; 3 -> 5:4; 4 -> 3:2; 6 ->
+		 * 															// 16:9; 11 -> FX uncropped; 12 -> DX uncropped;
+		 * 															// 17 -> 1:1
+		 * 	libraw_sensor_highspeed_crop_t SensorHighSpeedCrop;
+		 * 	ushort SensorWidth;
+		 * 	ushort SensorHeight;
+		 * 	ushort Active_D_Lighting;
+		 * 	unsigned PictureControlVersion;
+		 * 	char PictureControlName [20];
+		 * 	char PictureControlBase [20];
+		 * 	unsigned ShotInfoVersion;
+		 * 	short MakernotesFlip;
+		 * 	double RollAngle;  // positive is clockwise, CW
+		 * 	double PitchAngle; // positive is upwords
+		 * 	double YawAngle;   // positive is to the right
 		 * } libraw_nikon_makernotes_t;
+		 * ```
 		 */
-		const exposureBracketValue = this.readF64(ptr);
-		const activeDLighting = this.readU16(ptr);
-		const shootingMode = this.readU16(ptr);
-		const imageStabilization = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const vibrationReduction = this.readU8(ptr);
-		const vrMode = this.readU8(ptr);
-		const flashSetting = this.readString(ptr, { length: 13 });
-		const flashType = this.readString(ptr, { length: 20 });
-		const flashExposureCompensation = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const externalFlashExposureComp = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const flashExposureBracketValue = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const flashMode = this.readU8(ptr);
-		const flashExposureCompensation2 = this.readI8(ptr);
-		const flashExposureCompensation3 = this.readI8(ptr);
-		const flashExposureCompensation4 = this.readI8(ptr);
-		const flashSource = this.readU8(ptr);
-		const flashFirmware = [this.readU8(ptr), this.readU8(ptr)] as const;
-		const externalFlashFlags = this.readU8(ptr);
-		const flashControlCommanderMode = this.readU8(ptr);
-		const flashOutputAndCompensation = this.readU8(ptr);
-		const flashFocalLength = this.readU8(ptr);
-		const flashGNDistance = this.readU8(ptr);
-		const flashGroupControlMode = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const flashGroupOutputAndCompensation = [
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-			this.readU8(ptr),
-		] as const;
-		const flashColorFilter = this.readU8(ptr);
-		const nefCompression = this.readU16(ptr);
-		const exposureMode = this.readI32(ptr);
-		const exposureProgram = this.readI32(ptr);
-		const nMEshots = this.readI32(ptr);
-		const meGainOn = this.readI32(ptr);
-		const meWb = [
-			this.readF64(ptr),
-			this.readF64(ptr),
-			this.readF64(ptr),
-			this.readF64(ptr),
-		] as const;
-		const afFineTune = this.readU8(ptr);
-		const afFineTuneIndex = this.readU8(ptr);
-		const afFineTuneAdj = this.readI8(ptr);
-		const lensDataVersion = this.readU32(ptr);
-		const flashInfoVersion = this.readU32(ptr);
-		const colorBalanceVersion = this.readU32(ptr);
-		const key = this.readU8(ptr);
-		const nefBitDepth = [
-			this.readU16(ptr),
-			this.readU16(ptr),
-			this.readU16(ptr),
-			this.readU16(ptr),
-		] as const;
-		const highSpeedCropFormat = this.readU16(ptr);
-		const sensorHighSpeedCrop = {
-			cleft: this.readU16(ptr),
-			ctop: this.readU16(ptr),
-			cwidth: this.readU16(ptr),
-			cheight: this.readU16(ptr),
-		};
-		const sensorWidth = this.readU16(ptr);
-		const sensorHeight = this.readU16(ptr);
-		const activeDLighting2 = this.readU16(ptr);
-		const shotInfoVersion = this.readU32(ptr);
-		const makernotesFlip = this.readI16(ptr);
-		const rollAngle = this.readF64(ptr);
-		const pitchAngle = this.readF64(ptr);
-		const yawAngle = this.readF64(ptr);
-		return {
-			exposureBracketValue,
-			activeDLighting,
-			shootingMode,
-			imageStabilization,
-			vibrationReduction,
-			vrMode,
-			flashSetting,
-			flashType,
-			flashExposureCompensation,
-			externalFlashExposureComp,
-			flashExposureBracketValue,
-			flashMode,
-			flashExposureCompensation2,
-			flashExposureCompensation3,
-			flashExposureCompensation4,
-			flashSource,
-			flashFirmware,
-			externalFlashFlags,
-			flashControlCommanderMode,
-			flashOutputAndCompensation,
-			flashFocalLength,
-			flashGNDistance,
-			flashGroupControlMode,
-			flashGroupOutputAndCompensation,
-			flashColorFilter,
-			nefCompression,
-			exposureMode,
-			exposureProgram,
-			nMEshots,
-			meGainOn,
-			meWb,
-			afFineTune,
-			afFineTuneIndex,
-			afFineTuneAdj,
-			lensDataVersion,
-			flashInfoVersion,
-			colorBalanceVersion,
-			key,
-			nefBitDepth,
-			highSpeedCropFormat,
-			sensorHighSpeedCrop,
-			sensorWidth,
-			sensorHeight,
-			activeDLighting2,
-			shotInfoVersion,
-			makernotesFlip,
-			rollAngle,
-			pitchAngle,
-			yawAngle,
-		};
+		return new Struct()
+			.field("exposureBracketValue", typ.f64)
+			.field("activeDLighting", typ.u16)
+			.field("shootingMode", typ.u16)
+			.field("imageStabilization", typ.sizedArray(typ.u8, 7))
+			.field("vibrationReduction", typ.u8)
+			.field("vrMode", typ.u8)
+			.field("flashSetting", typ.sizedCharArrayAsString(13))
+			.field("flashType", typ.sizedCharArrayAsString(20))
+			.field("flashExposureCompensation", typ.sizedArray(typ.u8, 4))
+			.field("externalFlashExposureComp", typ.sizedArray(typ.u8, 4))
+			.field("flashExposureBracketValue", typ.sizedArray(typ.u8, 4))
+			.field("flashMode", typ.u8)
+			.field("flashExposureCompensation2", typ.i8)
+			.field("flashExposureCompensation3", typ.i8)
+			.field("flashExposureCompensation4", typ.i8)
+			.field("flashSource", typ.u8)
+			.field("flashFirmware", typ.sizedArray(typ.u8, 2))
+			.field("externalFlashFlags", typ.u8)
+			.field("flashControlCommanderMode", typ.u8)
+			.field("flashOutputAndCompensation", typ.u8)
+			.field("flashFocalLength", typ.u8)
+			.field("flashGNDistance", typ.u8)
+			.field("flashGroupControlMode", typ.sizedArray(typ.u8, 4))
+			.field("flashGroupOutputAndCompensation", typ.sizedArray(typ.u8, 4))
+			.field("flashColorFilter", typ.u8)
+			.field(
+				"nefCompression",
+				typ.enumLike(typ.u16, {
+					1: "lossy (type 1)",
+					2: "uncompressed",
+					3: "lossless",
+					4: "lossy (type 2)",
+					5: "striped packed 12-bit",
+					6: "uncompressed (14-bit reduced to 12-bit)",
+					7: "unpacked 12-bit",
+					8: "small raw",
+					9: "packed 12-bit",
+					10: "packed 14-bit",
+					13: "high efficiency",
+					14: "high efficiency*",
+				} as const),
+			)
+			.field("exposureMode", typ.i32)
+			.field("exposureProgram", typ.i32)
+			.field("nMEshots", typ.i32)
+			.field("mEgainOn", typ.i32)
+			.field("mE_WB", typ.sizedArray(typ.f64, 4))
+			.field("afFineTune", typ.u8)
+			.field("afFineTuneIndex", typ.u8)
+			.field("afFineTuneAdj", typ.i8)
+			.field("lensDataVersion", typ.u32)
+			.field("flashInfoVersion", typ.u32)
+			.field("colorBalanceVersion", typ.u32)
+			.field("key", typ.u8)
+			.field("nefBitDepth", typ.sizedArray(typ.u16, 4))
+			.field(
+				"highSpeedCropFormat",
+				typ.enumLike(typ.u16, {
+					1: "1.3x",
+					2: "dx",
+					3: "5:4",
+					4: "3:2",
+					6: "16:9",
+					11: "fx uncropped",
+					12: "dx uncropped",
+					17: "1:1",
+				} as const),
+			)
+			.field(
+				"sensorHighSpeedCrop",
+				new Struct()
+					.field("cleft", typ.u16)
+					.field("ctop", typ.u16)
+					.field("cwidth", typ.u16)
+					.field("cheight", typ.u16),
+			)
+			.field("sensorWidth", typ.u16)
+			.field("sensorHeight", typ.u16)
+			.field("active_D_Lighting", typ.u16)
+			.field("pictureControlVersion", typ.u32)
+			.field("pictureControlName", typ.sizedCharArrayAsString(20))
+			.field("pictureControlBase", typ.sizedCharArrayAsString(20))
+			.field("shotInfoVersion", typ.u32)
+			.field("makernotesFlip", typ.i16)
+			.field("rollAngle", typ.f64)
+			.field("pitchAngle", typ.f64)
+			.field("yawAngle", typ.f64)
+			.build({
+				buf: this.libraw.HEAPU8,
+				offset: this.libraw._libraw_get_nikon_makernotes(this.lr),
+			});
 	}
 	getHasselbladMakernotes() {
 		const ptr = { ptr: this.libraw._libraw_get_hasselblad_makernotes(this.lr) };

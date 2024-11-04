@@ -33,6 +33,10 @@ it("ARW", async () => {
 	expect(imgother.isoSpeed).toBe(250);
 	expect(imgother.shutter).toBeCloseTo(1 / 1000);
 	expect(imgother.aperture).toBe(8);
+
+	const lensinfo = libraw.getLensInfo();
+	expect(lensinfo.exifMaxAp).toBeCloseTo(6.3);
+	expect(lensinfo.focalLengthIn35mmFormat).toBe(375);
 });
 
 it("CR2", async () => {
@@ -87,12 +91,16 @@ it("NEF", async () => {
 	expect(iparams.model).toBe("D90");
 	expect(iparams.normalizedMake).toBe("Nikon");
 	expect(iparams.normalizedModel).toBe("D90");
+	expect(iparams.isFoveon).toBeFalsy();
 
 	const imgother = libraw.getImgOther();
 	expect(imgother.focalLen).toBe(50);
 	expect(imgother.isoSpeed).toBe(100);
 	expect(imgother.shutter).toBeCloseTo(1 / 60);
 	expect(imgother.aperture).toBe(3.5);
+
+	const lensinfo = libraw.getLensInfo();
+	expect(lensinfo.exifMaxAp).toBeCloseTo(Math.SQRT2);
 });
 
 it("PEF", async () => {
@@ -107,12 +115,16 @@ it("PEF", async () => {
 	expect(iparams.model).toBe("K10D");
 	expect(iparams.normalizedMake).toBe("Pentax");
 	expect(iparams.normalizedModel).toBe("K10D");
+	expect(iparams.isFoveon).toBeFalsy();
 
 	const imgother = libraw.getImgOther();
 	expect(imgother.focalLen).toBe(190);
 	expect(imgother.isoSpeed).toBe(640);
 	expect(imgother.shutter).toBeCloseTo(1 / 160);
 	expect(imgother.aperture).toBe(4.5);
+
+	const lensinfo = libraw.getLensInfo();
+	expect(lensinfo.focalLengthIn35mmFormat).toBe(285);
 });
 
 it("RW2", async () => {
@@ -127,12 +139,16 @@ it("RW2", async () => {
 	expect(iparams.model).toBe("DMC-G1");
 	expect(iparams.normalizedMake).toBe("Panasonic");
 	expect(iparams.normalizedModel).toBe("DMC-G1");
+	expect(iparams.isFoveon).toBeFalsy();
 
 	const imgother = libraw.getImgOther();
 	expect(imgother.focalLen).toBe(14);
 	expect(imgother.isoSpeed).toBe(100);
 	expect(imgother.shutter).toBeCloseTo(1 / 400);
 	expect(imgother.aperture).toBeCloseTo(6.3);
+
+	const lensinfo = libraw.getLensInfo();
+	expect(lensinfo.exifMaxAp).toBeCloseTo(3.5);
 });
 
 it("RAW", async () => {
@@ -147,10 +163,14 @@ it("RAW", async () => {
 	expect(iparams.model).toBe("DIGILUX 2");
 	expect(iparams.normalizedMake).toBe("Panasonic");
 	expect(iparams.normalizedModel).toBe("DMC-LC1");
+	expect(iparams.isFoveon).toBeFalsy();
 
 	const imgother = libraw.getImgOther();
 	expect(imgother.focalLen).toBe(7);
 	expect(imgother.isoSpeed).toBe(100);
 	expect(imgother.shutter).toBeCloseTo(1 / 250);
 	expect(imgother.aperture).toBe(11);
+
+	const lensinfo = libraw.getLensInfo();
+	expect(lensinfo.exifMaxAp).toBe(2);
 });

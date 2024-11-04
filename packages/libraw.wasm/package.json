@@ -21,12 +21,20 @@
 		"watch:ts": "tsc -w",
 		"test": "vitest"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/ssssota/libraw.wasm.git"
 	},
-	"keywords": ["libraw", "raw", "image", "wasm", "webassembly"],
+	"keywords": [
+		"libraw",
+		"raw",
+		"image",
+		"wasm",
+		"webassembly"
+	],
 	"author": "TOMIKAWA Sotaro <tommysouta@gmail.com>",
 	"license": "MIT",
 	"bugs": {
@@ -39,6 +47,6 @@
 		"vitest": "^2.1.4"
 	},
 	"dependencies": {
-		"typed-cstruct": "^0.1.2"
+		"typed-cstruct": "^0.2.1"
 	}
 }
