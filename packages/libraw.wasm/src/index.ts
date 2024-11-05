@@ -152,7 +152,10 @@ export class LibRaw implements Disposable {
 	private static modulePromise: Promise<LibRawWasmModule> | undefined;
 	private static module: LibRawWasmModule;
 	private lr = 0 as LibRawDataT;
-	private status: "disposed" | "loading" | "ready" = "loading";
+	private _status: "disposed" | "loading" | "ready" = "loading";
+	get status() {
+		return this._status;
+	}
 	private get view(): DataView {
 		return new DataView(LibRaw.module.HEAPU8.buffer);
 	}
@@ -171,7 +174,7 @@ export class LibRaw implements Disposable {
 	}
 	private async setup() {
 		await LibRaw.initialize();
-		this.status = "ready";
+		this._status = "ready";
 		this.lr ||= LibRaw.module._libraw_init(0);
 	}
 	open(buffer: ArrayBuffer) {
@@ -2108,9 +2111,9 @@ export class LibRaw implements Disposable {
 		return value || 0;
 	}
 	dispose() {
-		if (this.status === "disposed") return;
+		if (this._status === "disposed") return;
 		LibRaw.module._libraw_close(this.lr);
-		this.status = "disposed";
+		this._status = "disposed";
 	}
 	[Symbol.dispose]() {
 		this.dispose();

@@ -9,17 +9,19 @@ const repoRoot = path.join(__dirname, "..");
 const samplesDir = path.join(repoRoot, "raw-samples");
 
 it("supported cameras", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const cameras = libraw.cameraList();
 	expect(cameras).toMatchSnapshot();
 });
 
 it("ARW", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "ARW", "RAW_SONY_A700.ARW"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Sony");
@@ -40,11 +42,12 @@ it("ARW", async () => {
 });
 
 it("CR2", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "CR2", "sample_canon_400d1.cr2"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Canon");
@@ -60,11 +63,12 @@ it("CR2", async () => {
 });
 
 it("DNG", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "DNG", "RAW_LEICA_M8.DNG"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Leica");
@@ -80,11 +84,12 @@ it("DNG", async () => {
 });
 
 it("NEF", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "NEF", "RAW_NIKON_D90.NEF"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Nikon");
@@ -104,11 +109,12 @@ it("NEF", async () => {
 });
 
 it("PEF", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "PEF", "RAW_PENTAX_KD10.PEF"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Pentax");
@@ -128,11 +134,12 @@ it("PEF", async () => {
 });
 
 it("RW2", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "RW2", "RAW_PANASONIC_G1.RW2"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Panasonic");
@@ -152,11 +159,12 @@ it("RW2", async () => {
 });
 
 it("RAW", async () => {
-	using libraw = await LibRaw.create();
+	using libraw = new LibRaw();
+	await libraw.waitUntilReady();
 	const file = await fs.readFile(
 		path.join(samplesDir, "RAW", "RAW_LEICA_DIGILUX2_SRGB.RAW"),
 	);
-	await libraw.open(file.buffer);
+	libraw.open(file.buffer);
 
 	const iparams = libraw.getIParams();
 	expect(iparams.make).toBe("Leica");
