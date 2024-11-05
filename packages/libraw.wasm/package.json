@@ -18,8 +18,7 @@
 		"build:wasm": "node scripts/build.mjs",
 		"build:ts": "tsc",
 		"watch": "pnpm run \"/^watch:.*/\"",
-		"watch:ts": "tsc -w",
-		"test": "vitest"
+		"watch:ts": "tsc -w"
 	},
 	"files": ["dist"],
 	"repository": {
@@ -35,8 +34,7 @@
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
 	"devDependencies": {
 		"@types/node": "^20.6.4",
-		"typescript": "^5.0.2",
-		"vitest": "^2.1.4"
+		"typescript": "^5.0.2"
 	},
 	"dependencies": {
 		"typed-cstruct": "^0.3.0"
