@@ -149,76 +149,87 @@ export type ProcessedImage = {
 };
 
 export class LibRaw implements Disposable {
-	private disposed = false;
+	private static modulePromise: Promise<LibRawWasmModule> | undefined;
+	private static module: LibRawWasmModule;
+	private lr = 0 as LibRawDataT;
+	private status: "disposed" | "loading" | "ready" = "loading";
 	private get view(): DataView {
-		return new DataView(this.libraw.HEAPU8.buffer);
+		return new DataView(LibRaw.module.HEAPU8.buffer);
 	}
-	private constructor(
-		private libraw: LibRawWasmModule,
-		private lr: LibRawDataT,
-	) {}
-	static async create() {
-		const libraw: LibRawWasmModule = await initializeLibRawWasm();
-		const lr = libraw._libraw_init(0);
-		return new LibRaw(libraw, lr);
+	constructor() {
+		this.setup();
 	}
-	async open(buffer: ArrayBuffer) {
+	static async initialize() {
+		if (LibRaw.modulePromise === undefined) {
+			const mod: Promise<LibRawWasmModule> = initializeLibRawWasm();
+			LibRaw.modulePromise = mod;
+			LibRaw.module = await mod;
+		}
+	}
+	async waitUntilReady() {
+		await LibRaw.modulePromise;
+	}
+	private async setup() {
+		await LibRaw.initialize();
+		this.status = "ready";
+		this.lr ||= LibRaw.module._libraw_init(0);
+	}
+	open(buffer: ArrayBuffer) {
 		// alloc memory
-		const dataPtr = this.libraw._malloc(buffer.byteLength);
+		const dataPtr = LibRaw.module._malloc(buffer.byteLength);
 		const dataHeap = new Uint8Array(
-			this.libraw.HEAPU8.buffer,
+			LibRaw.module.HEAPU8.buffer,
 			dataPtr,
 			buffer.byteLength,
 		);
 		dataHeap.set(new Uint8Array(buffer));
 		// open buffer
 		this.handleError(
-			this.libraw._libraw_open_buffer(
+			LibRaw.module._libraw_open_buffer(
 				this.lr,
 				dataHeap.byteOffset,
 				buffer.byteLength,
 			),
 		);
 	}
-	async unpack() {
-		this.handleError(this.libraw._libraw_unpack(this.lr));
+	unpack() {
+		this.handleError(LibRaw.module._libraw_unpack(this.lr));
 	}
-	async unpackThumb() {
-		this.handleError(this.libraw._libraw_unpack_thumb(this.lr));
+	unpackThumb() {
+		this.handleError(LibRaw.module._libraw_unpack_thumb(this.lr));
 	}
-	async unpackThumbEx(i: Int) {
-		this.handleError(this.libraw._libraw_unpack_thumb_ex(this.lr, i));
+	unpackThumbEx(i: Int) {
+		this.handleError(LibRaw.module._libraw_unpack_thumb_ex(this.lr, i));
 	}
-	async raw2image() {
-		this.handleError(this.libraw._libraw_raw2image(this.lr));
+	raw2image() {
+		this.handleError(LibRaw.module._libraw_raw2image(this.lr));
 	}
-	async dcrawProcess() {
-		this.handleError(this.libraw._libraw_dcraw_process(this.lr));
+	dcrawProcess() {
+		this.handleError(LibRaw.module._libraw_dcraw_process(this.lr));
 	}
-	async dcrawMakeMemImage() {
-		const errcPtr = this.libraw._malloc(4);
-		const ptr = this.libraw._libraw_dcraw_make_mem_image(this.lr, errcPtr);
+	dcrawMakeMemImage() {
+		const errcPtr = LibRaw.module._malloc(4);
+		const ptr = LibRaw.module._libraw_dcraw_make_mem_image(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
-		this.libraw._free(errcPtr);
-		if (code) throw this.handleError(code as ErrorCode);
+		LibRaw.module._free(errcPtr);
+		// this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
 		const ret = this.readProcessedImage(ptr);
-		this.libraw._libraw_dcraw_clear_mem(ptr);
+		LibRaw.module._libraw_dcraw_clear_mem(ptr);
 		return ret;
 	}
-	async dcrawMakeMemThumb() {
-		const errcPtr = this.libraw._malloc(4);
-		const ptr = this.libraw._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
+	dcrawMakeMemThumb() {
+		const errcPtr = LibRaw.module._malloc(4);
+		const ptr = LibRaw.module._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
 		const code = this.readI32({ ptr: errcPtr });
-		this.libraw._free(errcPtr);
-		if (code) throw this.handleError(code as ErrorCode);
+		LibRaw.module._free(errcPtr);
+		this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
 		const ret = this.readProcessedImage(ptr);
-		this.libraw._libraw_dcraw_clear_mem(ptr);
+		LibRaw.module._libraw_dcraw_clear_mem(ptr);
 		return ret;
 	}
 	private readProcessedImage(processed: LibRawProcessedImageT): ProcessedImage {
-		const ptr = { ptr: processed };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L170-L176
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_const.h#L804-L808
@@ -235,109 +246,109 @@ export class LibRaw implements Disposable {
 		 * } libraw_processed_image_t;
 		 * ```
 		 */
-		const type = this.readU32(ptr);
-		const height = this.readU16(ptr);
-		const width = this.readU16(ptr);
-		const colors = this.readU16(ptr);
-		const bits = this.readU16(ptr);
-		const dataSize = this.readU32(ptr);
-		const dataPtr = this.readU32(ptr);
-		const data = new Uint8Array(
-			this.libraw.HEAPU8.buffer.slice(dataPtr, dataPtr + dataSize),
-		);
-		return {
-			type: type === 1 ? "jpeg" : "bitmap",
-			height,
-			width,
-			colors,
-			bits,
-			dataSize,
-			data,
-		} as const;
+		return new Struct()
+			.field(
+				"type",
+				typ.enumLike(typ.u32, { "1": "jpeg", "2": "bitmap" } as const),
+			)
+			.field("height", typ.u16)
+			.field("width", typ.u16)
+			.field("colors", typ.u16)
+			.field("bits", typ.u16)
+			.field("dataSize", typ.u32)
+			.field("data", {
+				size: 1,
+				read(opts, ctx) {
+					const offset = opts.offset ?? 0;
+					const dataSize = ctx.dataSize;
+					return new Uint8Array(opts.buf.buffer, offset, dataSize).slice();
+				},
+			})
+			.read({ buf: LibRaw.module.HEAPU8, offset: processed });
 	}
 	getRawHeight() {
-		return this.libraw._libraw_get_raw_height(this.lr);
+		return LibRaw.module._libraw_get_raw_height(this.lr);
 	}
 	getRawWidth() {
-		return this.libraw._libraw_get_raw_width(this.lr);
+		return LibRaw.module._libraw_get_raw_width(this.lr);
 	}
 	getIHeight() {
-		return this.libraw._libraw_get_iheight(this.lr);
+		return LibRaw.module._libraw_get_iheight(this.lr);
 	}
 	getIWidth() {
-		return this.libraw._libraw_get_iwidth(this.lr);
+		return LibRaw.module._libraw_get_iwidth(this.lr);
 	}
 	getCamMul(index: Int) {
-		return this.libraw._libraw_get_cam_mul(this.lr, index);
+		return LibRaw.module._libraw_get_cam_mul(this.lr, index);
 	}
 	getPreMul(index: Int) {
-		return this.libraw._libraw_get_pre_mul(this.lr, index);
+		return LibRaw.module._libraw_get_pre_mul(this.lr, index);
 	}
 	getRgbCam(index1: Int, index2: Int) {
-		return this.libraw._libraw_get_rgb_cam(this.lr, index1, index2);
+		return LibRaw.module._libraw_get_rgb_cam(this.lr, index1, index2);
 	}
 	getColorMaximum() {
-		return this.libraw._libraw_get_color_maximum(this.lr);
+		return LibRaw.module._libraw_get_color_maximum(this.lr);
 	}
 	setUserMul(index: Int, val: Float) {
-		this.libraw._libraw_set_user_mul(this.lr, index, val);
+		LibRaw.module._libraw_set_user_mul(this.lr, index, val);
 	}
 	setDemosaic(value: Int) {
-		this.libraw._libraw_set_demosaic(this.lr, value);
+		LibRaw.module._libraw_set_demosaic(this.lr, value);
 	}
 	setAdjustMaximumThr(value: Float) {
-		this.libraw._libraw_set_adjust_maximum_thr(this.lr, value);
+		LibRaw.module._libraw_set_adjust_maximum_thr(this.lr, value);
 	}
 	setOutputColor(value: Int) {
-		this.libraw._libraw_set_output_color(this.lr, value);
+		LibRaw.module._libraw_set_output_color(this.lr, value);
 	}
 	setOutputBps(value: Int) {
-		this.libraw._libraw_set_output_bps(this.lr, value);
+		LibRaw.module._libraw_set_output_bps(this.lr, value);
 	}
 	setGamma(index: Int, value: Float) {
-		this.libraw._libraw_set_gamma(this.lr, index, value);
+		LibRaw.module._libraw_set_gamma(this.lr, index, value);
 	}
 	setNoAutoBright(value: Int) {
-		this.libraw._libraw_set_no_auto_bright(this.lr, value);
+		LibRaw.module._libraw_set_no_auto_bright(this.lr, value);
 	}
 	setBright(value: Float) {
-		this.libraw._libraw_set_bright(this.lr, value);
+		LibRaw.module._libraw_set_bright(this.lr, value);
 	}
 	setHighlight(value: Int) {
-		this.libraw._libraw_set_highlight(this.lr, value);
+		LibRaw.module._libraw_set_highlight(this.lr, value);
 	}
 	setFbddNoiserd(value: Int) {
-		this.libraw._libraw_set_fbdd_noiserd(this.lr, value);
+		LibRaw.module._libraw_set_fbdd_noiserd(this.lr, value);
 	}
 	version(): string {
-		return this.readString(this.libraw._libraw_version(this.lr));
+		return this.readString(LibRaw.module._libraw_version(this.lr));
 	}
 	versionNumber(): number {
-		return this.libraw._libraw_versionNumber(this.lr);
+		return LibRaw.module._libraw_versionNumber(this.lr);
 	}
 	cameraCount(): number {
-		return this.libraw._libraw_cameraCount(this.lr);
+		return LibRaw.module._libraw_cameraCount(this.lr);
 	}
 	cameraList(): string[] {
 		const length = this.cameraCount();
-		const ptr = { ptr: this.libraw._libraw_cameraList(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_cameraList(this.lr) };
 		return Array.from({ length }, () => {
 			const charPtr = this.readU32(ptr);
 			return this.readString(charPtr as CharPtr);
 		});
 	}
 	unpackFunctionName(): string {
-		return this.readString(this.libraw._libraw_unpack_function_name(this.lr));
+		return this.readString(LibRaw.module._libraw_unpack_function_name(this.lr));
 	}
 	color(row: Int, col: Int): number {
-		return this.libraw._libraw_COLOR(this.lr, row, col);
+		return LibRaw.module._libraw_COLOR(this.lr, row, col);
 	}
 	recycle() {
-		this.libraw._libraw_recycle(this.lr);
+		LibRaw.module._libraw_recycle(this.lr);
 	}
 	getRawImage() {
-		const ptr = this.libraw._libraw_get_raw_image(this.lr);
-		return new Uint16Array(this.libraw.HEAPU8.buffer, ptr);
+		const ptr = LibRaw.module._libraw_get_raw_image(this.lr);
+		return new Uint16Array(LibRaw.module.HEAPU8.buffer, ptr);
 	}
 	getIParams(): IParams {
 		/**
@@ -383,8 +394,8 @@ export class LibRaw implements Disposable {
 			.field("xmplen", typ.u32)
 			.field("xmpdata", typ.charPointerAsString)
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_iparams(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_iparams(this.lr),
 			});
 	}
 	getLensInfo(): LensInfo {
@@ -522,8 +533,8 @@ export class LibRaw implements Disposable {
 			.field("dng", dng)
 			.field("makernotes", makernotes)
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_lensinfo(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_lensinfo(this.lr),
 			});
 	}
 	getImgOther(): ImgOther {
@@ -591,8 +602,8 @@ export class LibRaw implements Disposable {
 			.field("artist", typ.sizedCharArrayAsString(64))
 			.field("analogbalance", typ.sizedArray(typ.f32, 4))
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_imgother(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_imgother(this.lr),
 			});
 	}
 	// getDecoderInfo() {
@@ -605,8 +616,8 @@ export class LibRaw implements Disposable {
 	// 	 * } libraw_decoder_info_t;
 	// 	 * ```
 	// 	 */
-	// 	const decoderInfoPtr = this.libraw._malloc(8) as LibRawDecoderInfo;
-	// 	const code = this.libraw._libraw_get_decoder_info(decoderInfoPtr);
+	// 	const decoderInfoPtr = LibRaw.libraw._malloc(8) as LibRawDecoderInfo;
+	// 	const code = LibRaw.libraw._libraw_get_decoder_info(decoderInfoPtr);
 	// 	console.log({ code });
 	// 	if (code) throw this.error(code);
 	// 	const ptr = { ptr: decoderInfoPtr };
@@ -616,7 +627,6 @@ export class LibRaw implements Disposable {
 	// 	};
 	// }
 	getThumbnail() {
-		const ptr = { ptr: this.libraw._libraw_get_thumbnail(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L804-L811
 		 * ```c
@@ -648,41 +658,9 @@ export class LibRaw implements Disposable {
 			.field("tcolors", typ.i32)
 			.field("thumb", typ.pointerArrayFromLengthField(typ.u8, "tlength"))
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_thumbnail(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_thumbnail(this.lr),
 			});
-	}
-	private getThumbnailFormat(tformat: number): ThumbnailFormat {
-		/**
-		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_const.h#L793-L802
-		 * ```c
-		 * enum LibRaw_thumbnail_formats {
-		 *   LIBRAW_THUMBNAIL_UNKNOWN = 0,
-		 *   LIBRAW_THUMBNAIL_JPEG = 1,
-		 *   LIBRAW_THUMBNAIL_BITMAP = 2,
-		 *   LIBRAW_THUMBNAIL_BITMAP16 = 3,
-		 *   LIBRAW_THUMBNAIL_LAYER = 4,
-		 *   LIBRAW_THUMBNAIL_ROLLEI = 5,
-		 *   LIBRAW_THUMBNAIL_H265 = 6
-		 * };
-		 * ```
-		 */
-		switch (tformat) {
-			case 1:
-				return "jpeg";
-			case 2:
-				return "bitmap";
-			case 3:
-				return "bitmap16";
-			case 4:
-				return "layer";
-			case 5:
-				return "rollei";
-			case 6:
-				return "h265";
-			default:
-				return "unknown";
-		}
 	}
 	getShootingInfo() {
 		/**
@@ -713,8 +691,8 @@ export class LibRaw implements Disposable {
 			.field("bodySerial", typ.sizedCharArrayAsString(64))
 			.field("internalBodySerial", typ.sizedCharArrayAsString(64))
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_shootinginfo(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_shootinginfo(this.lr),
 			});
 	}
 	getMakernotes() {
@@ -891,8 +869,8 @@ export class LibRaw implements Disposable {
 			.field("activeArea", areaTyp)
 			.field("isoGain", typ.sizedArray(typ.i16, 2))
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_canon_makernotes(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_canon_makernotes(this.lr),
 			});
 	}
 	getNikonMakernotes() {
@@ -1067,12 +1045,14 @@ export class LibRaw implements Disposable {
 			.field("pitchAngle", typ.f64)
 			.field("yawAngle", typ.f64)
 			.read({
-				buf: this.libraw.HEAPU8,
-				offset: this.libraw._libraw_get_nikon_makernotes(this.lr),
+				buf: LibRaw.module.HEAPU8,
+				offset: LibRaw.module._libraw_get_nikon_makernotes(this.lr),
 			});
 	}
 	getHasselbladMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_hasselblad_makernotes(this.lr) };
+		const ptr = {
+			ptr: LibRaw.module._libraw_get_hasselblad_makernotes(this.lr),
+		};
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L321-L360
 		 * ```c
@@ -1154,7 +1134,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getFujiInfo() {
-		const ptr = { ptr: this.libraw._libraw_get_fuji_info(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_fuji_info(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L362-L439
 		 * ```c
@@ -1328,7 +1308,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getOlympusMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_olympus_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_olympus_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L519-L546
 		 * ```c
@@ -1440,7 +1420,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getSonyInfo() {
-		const ptr = { ptr: this.libraw._libraw_get_sony_info(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_sony_info(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L641-L736
 		 * ```c
@@ -1656,7 +1636,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getKodakMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_kodak_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_kodak_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L616-L632
 		 * ```c
@@ -1742,7 +1722,9 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getPanasonicMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_panasonic_makernotes(this.lr) };
+		const ptr = {
+			ptr: LibRaw.module._libraw_get_panasonic_makernotes(this.lr),
+		};
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L548-L567
 		 * ```c
@@ -1803,7 +1785,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getPentaxMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_pentax_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_pentax_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L569-L583
 		 * ```c
@@ -1853,7 +1835,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getPhaseOneMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_phaseone_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_phaseone_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L634-L639
 		 * ```c
@@ -1872,7 +1854,7 @@ export class LibRaw implements Disposable {
 		return { software, systemType, firmwareString, systemModel };
 	}
 	getRicohMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_ricoh_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_ricoh_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L585-L603
 		 * ```c
@@ -1932,7 +1914,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getSamsungMakernotes() {
-		const ptr = { ptr: this.libraw._libraw_get_samsung_makernotes(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_samsung_makernotes(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L605-L614
 		 * ```c
@@ -1975,7 +1957,7 @@ export class LibRaw implements Disposable {
 		};
 	}
 	getCommonMetadata() {
-		const ptr = { ptr: this.libraw._libraw_get_common_metadata(this.lr) };
+		const ptr = { ptr: LibRaw.module._libraw_get_common_metadata(this.lr) };
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L861-L883
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L852-L859
@@ -2064,17 +2046,18 @@ export class LibRaw implements Disposable {
 		};
 	}
 	private handleError(code: ErrorCode) {
-		if (code) throw Error(this.readString(this.libraw._libraw_strerror(code)));
+		if (code)
+			throw Error(this.readString(LibRaw.module._libraw_strerror(code)));
 	}
 	private readString(ptr: MutablePtr | CharPtr, options?: { length?: number }) {
 		const { length: dataLength } = options ?? {};
 		const offset = typeof ptr === "number" ? ptr : ptr.ptr;
-		const zeroIndex = this.libraw.HEAPU8.indexOf(0, offset);
+		const zeroIndex = LibRaw.module.HEAPU8.indexOf(0, offset);
 		const length = Math.max(
 			0,
 			Math.min(dataLength ?? Number.POSITIVE_INFINITY, zeroIndex - offset),
 		);
-		const heap = new Uint8Array(this.libraw.HEAPU8.buffer, offset, length);
+		const heap = new Uint8Array(LibRaw.module.HEAPU8.buffer, offset, length);
 		if (typeof ptr !== "number") ptr.ptr += dataLength ?? length;
 		const str = new TextDecoder().decode(heap);
 		return str;
@@ -2115,19 +2098,19 @@ export class LibRaw implements Disposable {
 		return value || 0n;
 	}
 	private readF32(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPF32[ptr.ptr / 4];
+		const value = LibRaw.module.HEAPF32[ptr.ptr / 4];
 		ptr.ptr += 4;
 		return value || 0;
 	}
 	private readF64(ptr: MutablePtr): number {
-		const value = this.libraw.HEAPF64[ptr.ptr / 8];
+		const value = LibRaw.module.HEAPF64[ptr.ptr / 8];
 		ptr.ptr += 8;
 		return value || 0;
 	}
 	dispose() {
-		if (this.disposed) return;
-		this.libraw._libraw_close(this.lr);
-		this.disposed = true;
+		if (this.status === "disposed") return;
+		LibRaw.module._libraw_close(this.lr);
+		this.status = "disposed";
 	}
 	[Symbol.dispose]() {
 		this.dispose();

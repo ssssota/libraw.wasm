@@ -12,10 +12,12 @@
 		"lint": "prettier --check . && eslint ."
 	},
 	"dependencies": {
-		"libraw.wasm": "workspace:*"
+		"comlink": "^4.4.1",
+		"libraw.wasm": "workspace:*",
+		"mizu.css": "^0.1.2"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^3.0.0",
+		"@sveltejs/adapter-static": "^3.0.6",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
 		"@types/eslint": "^9.6.0",

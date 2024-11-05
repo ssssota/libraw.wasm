@@ -1,49 +1,53 @@
 <script lang="ts">
+	import Bitmap from '$lib/Bitmap.svelte';
 	import Jpeg from '$lib/Jpeg.svelte';
 	import { createLibRaw } from '$lib/libraw';
-	import { pending } from '$lib/pending';
-	import { promiseWithResolvers } from '$lib/promise_with_resolvers';
 	import { readFile } from '$lib/read_file';
-	import type { IParams } from 'libraw.wasm';
+	import { resolvable, type ResolvablePromise } from '$lib/resolvable';
+	import type { IParams, ProcessedImage } from 'libraw.wasm';
 
-	let iparams = $state<Promise<IParams> | undefined>();
-	let thumb = $state<Promise<Uint8Array> | undefined>();
+	let version = $state<string | undefined>();
+	let iparams = $state<ResolvablePromise<IParams> | undefined>();
+	let thumb = $state<ResolvablePromise<Uint8Array> | undefined>();
+	let raw = $state<ResolvablePromise<ProcessedImage> | undefined>();
 
 	const onFileChange = async (e: Event & { currentTarget: EventTarget & HTMLInputElement }) => {
 		const file = e.currentTarget.files?.[0];
 		if (!file) return;
-		const {
-			promise: iparamsPromise,
-			resolve: resolveIparams,
-			reject: rejectIparams
-		} = promiseWithResolvers<IParams>();
-		const {
-			promise: thumbPromise,
-			resolve: resolveThumb,
-			reject: rejectThumb
-		} = promiseWithResolvers<Uint8Array>();
-		iparams = iparamsPromise;
-		thumb = thumbPromise;
-		const libraw = await createLibRaw();
+		iparams = resolvable();
+		thumb = resolvable();
+		raw = resolvable();
+		const libraw = createLibRaw();
+		await libraw.waitUntilReady();
+		version = await libraw.version();
 		try {
 			const arrayBuffer = await readFile(file);
 			await libraw.open(arrayBuffer);
-			resolveIparams(libraw.getIParams());
+			libraw.getIParams().then(iparams.resolve, iparams.reject);
 
-			await libraw.unpackThumb();
-			const thumbnail = libraw.getThumbnail();
-			if (thumbnail.tformat === 'jpeg') {
-				resolveThumb(new Uint8Array(thumbnail.thumb));
+			await libraw.unpackThumb().catch(thumb.reject);
+			const thumbnail = await libraw.dcrawMakeMemThumb().catch(thumb.reject);
+			if (thumbnail?.type === 'jpeg') {
+				const buf = new Uint8Array(thumbnail.data);
+				thumb.resolve(buf);
 			}
+			await libraw.unpack().catch(raw.reject);
+			await libraw.dcrawProcess().catch(raw.reject);
+			await libraw.dcrawMakeMemImage().then(raw.resolve, raw.reject);
 		} catch (error) {
-			rejectIparams(error);
-			rejectThumb(error);
+			console.error(error);
+			iparams.reject(error);
+			thumb.reject(error);
+			raw.reject(error);
 		} finally {
-			libraw.dispose();
+			await libraw.dispose();
 		}
 	};
 </script>
 
+{#if version}
+	<p>libraw version: {version}</p>
+{/if}
 <input type="file" onchange={onFileChange} />
 {#if iparams}
 	{#await iparams}
@@ -61,6 +65,18 @@
 						Loading...
 					{:then thumb}
 						<Jpeg data={thumb} />
+					{:catch error}
+						<span class:error>{error.message}</span>
+					{/await}
+				</dd>
+			{/if}
+			{#if raw}
+				<dt>RAW</dt>
+				<dd>
+					{#await raw}
+						Loading...
+					{:then raw}
+						<Bitmap {...raw} />
 					{:catch error}
 						<span class:error>{error.message}</span>
 					{/await}
