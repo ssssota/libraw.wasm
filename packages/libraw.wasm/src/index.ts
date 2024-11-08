@@ -546,9 +546,9 @@ export class LibRaw implements Disposable {
 			read(opts: typ.ValueBuilderOptions) {
 				const offset = opts.offset ?? 0;
 				return [
-					typ.readF32(opts.buf, offset, opts.endian),
-					typ.readF32(opts.buf, offset + 4, opts.endian),
-					typ.readF32(opts.buf, offset + 8, opts.endian),
+					typ.readF32({ ...opts, offset }),
+					typ.readF32({ ...opts, offset: offset + 4 }),
+					typ.readF32({ ...opts, offset: offset + 8 }),
 				] as const;
 			},
 		};
