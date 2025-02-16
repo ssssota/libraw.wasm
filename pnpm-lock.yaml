@@ -15,8 +15,8 @@ importers:
   packages/libraw.wasm:
     dependencies:
       typed-cstruct:
-        specifier: ^0.4.0
-        version: 0.4.1
+        specifier: ^0.9.0
+        version: 0.9.3
     devDependencies:
       '@types/node':
         specifier: ^20.6.4
@@ -1231,8 +1231,8 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  typed-cstruct@0.4.1:
-    resolution: {integrity: sha512-/YtUp0fbeC13dk6fXspKkH57QBmnfQUgTfGDgu1/EmUYYGeHbbd4bGT+1tADcFcwYeS9UnqrzwYFmO+9GmAldA==}
+  typed-cstruct@0.9.3:
+    resolution: {integrity: sha512-h/1bjKSisySm1pXi0S2VCE/xr544DaqbLyuUNQrdUh8Y5FcdDCTIrCg4ehRvCx+SpjIuOQsoUdBncKDQ9Tzkwg==}
 
   typescript-eslint@8.12.2:
     resolution: {integrity: sha512-UbuVUWSrHVR03q9CWx+JDHeO6B/Hr9p4U5lRH++5tq/EbFq1faYZe50ZSBePptgfIKLEti0aPQ3hFgnPVcd8ZQ==}
@@ -2388,7 +2388,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  typed-cstruct@0.4.1: {}
+  typed-cstruct@0.9.3: {}
 
   typescript-eslint@8.12.2(eslint@9.14.0)(typescript@5.4.2):
     dependencies:
