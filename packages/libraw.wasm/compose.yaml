@@ -1,7 +1,60 @@
 services:
   builder:
-    image: emscripten/emsdk
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - .:/src
       - /src/LibRaw/object
     command: ["node", "/src/scripts/build.mjs"]
+  bindgen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/src
+    command: [
+      "npx",
+      "-p", "@typed-cstruct/generator@0.4.0",
+      "tcgen",
+      "-h", "/src/LibRaw/libraw/libraw.h",
+      "--dump-rust-code",
+      "--clang-args=\"--sysroot=/emsdk/upstream/emscripten/cache/wasm/sysroot\"",
+      "--ignore-entities=va_list",
+      "--ignore-entities=__gnuc_va_list",
+      "--ignore-entities=locale_t",
+      "--ignore-entities=__locale_t",
+      "--ignore-entities=__locale_struct",
+      "--ignore-entities=__mbstate_t",
+      "--ignore-entities=__mbstate_t__bindgen_ty_1",
+      "--ignore-entities=_G_fpos_t",
+      "--ignore-entities=_G_fpos64_t",
+      "--ignore-entities=__fpos_t",
+      "--ignore-entities=__fpos64_t",
+      "--ignore-entities=fpos_t",
+      "--ignore-entities=FILE",
+      "--ignore-entities=__FILE",
+      "--ignore-entities=_IO_FILE",
+      "--ignore-entities=libraw_internal_data_t",
+      "--ignore-entities=internal_data_t",
+      "--ignore-entities=__atomic_wide_counter",
+      "--ignore-entities=__pthread_cond_s",
+      "--ignore-entities=__pthread_internal_list",
+      "--ignore-entities=__pthread_internal_slist",
+      "--ignore-entities=__pthread_list_t",
+      "--ignore-entities=__pthread_slist_t",
+      "--ignore-entities=__pthread_mutex_s",
+      "--ignore-entities=pthread_mutexattr_t",
+      "--ignore-entities=pthread_condattr_t",
+      "--ignore-entities=pthread_attr_t",
+      "--ignore-entities=pthread_mutex_t",
+      "--ignore-entities=pthread_cond_t",
+      "--ignore-entities=pthread_rwlock_t",
+      "--ignore-entities=pthread_rwlockattr_t",
+      "--ignore-entities=pthread_barrier_t",
+      "--ignore-entities=pthread_barrierattr_t",
+      "--ignore-entities=libraw_tiff_tag",
+      "--ignore-entities=libraw_tiff_tag__bindgen_ty_1",
+      "--ignore-entities=tiff_hdr",
+      "--ignore-entities=decode",
+      "/src/src/libraw-types.ts"]

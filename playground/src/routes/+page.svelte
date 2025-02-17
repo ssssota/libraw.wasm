@@ -4,12 +4,12 @@
 	import { createLibRaw } from '$lib/libraw';
 	import { readFile } from '$lib/read_file';
 	import { resolvable, type ResolvablePromise } from '$lib/resolvable';
-	import type { IParams, ProcessedImage } from 'libraw.wasm';
+	import type { IParams, LibRaw } from 'libraw.wasm';
 
 	let version = $state<string | undefined>();
 	let iparams = $state<ResolvablePromise<IParams> | undefined>();
 	let thumb = $state<ResolvablePromise<Uint8Array> | undefined>();
-	let raw = $state<ResolvablePromise<ProcessedImage> | undefined>();
+	let raw = $state<ResolvablePromise<ReturnType<LibRaw['dcrawMakeMemImage']>> | undefined>();
 
 	const onFileChange = async (e: Event & { currentTarget: EventTarget & HTMLInputElement }) => {
 		const file = e.currentTarget.files?.[0];
@@ -27,7 +27,7 @@
 
 			await libraw.unpackThumb().catch(thumb.reject);
 			const thumbnail = await libraw.dcrawMakeMemThumb().catch(thumb.reject);
-			if (thumbnail?.type === 'jpeg') {
+			if (thumbnail?.type_ === 'LIBRAW_IMAGE_JPEG') {
 				const buf = new Uint8Array(thumbnail.data);
 				thumb.resolve(buf);
 			}

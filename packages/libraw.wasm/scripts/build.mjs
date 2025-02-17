@@ -193,14 +193,13 @@ lib/libraw.wasm: \${LIB_OBJECTS}
 
 	// move files to dist
 	await fs.mkdir(dist).catch(() => {});
-	await fs.rename(
-		path.join(cwd, "LibRaw/lib/libraw.mjs"),
-		path.join(dist, "libraw.js"),
-	);
-	await fs.rename(
-		path.join(cwd, "LibRaw/lib/libraw.wasm"),
-		path.join(dist, "libraw.wasm"),
-	);
+	const outfiles = ["libraw.mjs", "libraw.wasm"];
+	for (const outfile of outfiles) {
+		await fs.rename(
+			path.join(cwd, "LibRaw/lib", outfile),
+			path.join(dist, outfile),
+		);
+	}
 }
 
 main().catch((error) => {

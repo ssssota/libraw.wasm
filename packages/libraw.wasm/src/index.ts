@@ -1,8 +1,9 @@
 import { Struct } from "typed-cstruct";
 import * as typ from "typed-cstruct";
 
+import { libraw_processed_image_t } from "./libraw-types.js";
 // @ts-expect-error
-import initializeLibRawWasm from "./libraw.js";
+import initializeLibRawWasm from "./libraw.mjs";
 import type {
 	CharPtr,
 	ErrorCode,
@@ -232,7 +233,7 @@ export class LibRaw implements Disposable {
 		LibRaw.module._libraw_dcraw_clear_mem(ptr);
 		return ret;
 	}
-	private readProcessedImage(processed: LibRawProcessedImageT): ProcessedImage {
+	private readProcessedImage(processed: LibRawProcessedImageT) {
 		/**
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L170-L176
 		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_const.h#L804-L808
@@ -249,22 +250,13 @@ export class LibRaw implements Disposable {
 		 * } libraw_processed_image_t;
 		 * ```
 		 */
-		return new Struct()
-			.field(
-				"type",
-				typ.enumLike(typ.u32, { "1": "jpeg", "2": "bitmap" } as const),
-			)
-			.field("height", typ.u16)
-			.field("width", typ.u16)
-			.field("colors", typ.u16)
-			.field("bits", typ.u16)
-			.field("dataSize", typ.u32)
-			.field("data", {
+		return libraw_processed_image_t()
+			.override("data", {
 				size: 1,
 				read(opts, ctx) {
 					const offset = opts.offset ?? 0;
-					const dataSize = ctx.dataSize;
-					return new Uint8Array(opts.buf.buffer, offset, dataSize).slice();
+					const size = ctx.data_size;
+					return opts.buf.slice(offset, offset + size);
 				},
 			})
 			.read({ buf: LibRaw.module.HEAPU8, offset: processed });
@@ -395,7 +387,7 @@ export class LibRaw implements Disposable {
 			.field("xtransAbs", typ.sizedArray(typ.sizedArray(typ.u8, 6), 6))
 			.field("cdesc", typ.sizedCharArrayAsString(5))
 			.field("xmplen", typ.u32)
-			.field("xmpdata", typ.charPointerAsString)
+			.field("xmpdata", typ.charPointerAsString())
 			.read({
 				buf: LibRaw.module.HEAPU8,
 				offset: LibRaw.module._libraw_get_iparams(this.lr),
@@ -477,10 +469,9 @@ export class LibRaw implements Disposable {
 			.field(
 				"focalType",
 				typ.enumLike(typ.i16, {
-					[-1]: "unknown",
-					0: "unknown",
-					1: "fixed focal",
-					2: "zoom",
+					unknown: 0,
+					"fixed focal": 1,
+					zoom: 2,
 				} as const),
 			)
 			.field("lensFeaturesPre", typ.sizedCharArrayAsString(16))
@@ -540,7 +531,7 @@ export class LibRaw implements Disposable {
 				offset: LibRaw.module._libraw_get_lensinfo(this.lr),
 			});
 	}
-	getImgOther(): ImgOther {
+	getImgOther() {
 		const gpsTyp: typ.ValueBuilder<[number, number, number]> = {
 			size: typ.f32.size * 3,
 			read(opts: typ.ValueBuilderOptions) {
@@ -646,13 +637,13 @@ export class LibRaw implements Disposable {
 			.field(
 				"tformat",
 				typ.enumLike(typ.u32, {
-					0: "unknown",
-					1: "jpeg",
-					2: "bitmap",
-					3: "bitmap16",
-					4: "layer",
-					5: "rollei",
-					6: "h265",
+					unknown: 0,
+					jpeg: 1,
+					bitmap: 2,
+					bitmap16: 3,
+					layer: 4,
+					rollei: 5,
+					h265: 6,
 				} as const),
 			)
 			.field("twidth", typ.u16)
@@ -845,24 +836,24 @@ export class LibRaw implements Disposable {
 			.field(
 				"quality",
 				typ.enumLike(typ.i16, {
-					[-1]: "n/a",
-					1: "economy",
-					2: "normal",
-					3: "fine",
-					4: "raw",
-					5: "superfine",
-					7: "craw",
-					130: "normal movie, crm lightraw",
-					131: "crm standardraw",
+					"n/a": -1,
+					economy: 1,
+					normal: 2,
+					fine: 3,
+					raw: 4,
+					superfine: 5,
+					craw: 7,
+					"normal movie, crm lightraw": 130,
+					"crm standardraw": 131,
 				} as const),
 			)
 			.field(
 				"canonLog",
 				typ.enumLike(typ.i32, {
-					0: "off",
-					1: "clogv1",
-					2: "clogv2",
-					3: "clogv3",
+					off: 0,
+					clogv1: 1,
+					clogv2: 2,
+					clogv3: 3,
 				} as const),
 			)
 			.field("defaultCropAbsolute", areaTyp)
@@ -988,18 +979,18 @@ export class LibRaw implements Disposable {
 			.field(
 				"nefCompression",
 				typ.enumLike(typ.u16, {
-					1: "lossy (type 1)",
-					2: "uncompressed",
-					3: "lossless",
-					4: "lossy (type 2)",
-					5: "striped packed 12-bit",
-					6: "uncompressed (14-bit reduced to 12-bit)",
-					7: "unpacked 12-bit",
-					8: "small raw",
-					9: "packed 12-bit",
-					10: "packed 14-bit",
-					13: "high efficiency",
-					14: "high efficiency*",
+					"lossy (type 1)": 1,
+					uncompressed: 2,
+					lossless: 3,
+					"lossy (type 2)": 4,
+					"striped packed 12-bit": 5,
+					"uncompressed (14-bit reduced to 12-bit)": 6,
+					"unpacked 12-bit": 7,
+					"small raw": 8,
+					"packed 12-bit": 9,
+					"packed 14-bit": 10,
+					"high efficiency": 13,
+					"high efficiency*": 14,
 				} as const),
 			)
 			.field("exposureMode", typ.i32)
@@ -1018,14 +1009,14 @@ export class LibRaw implements Disposable {
 			.field(
 				"highSpeedCropFormat",
 				typ.enumLike(typ.u16, {
-					1: "1.3x",
-					2: "dx",
-					3: "5:4",
-					4: "3:2",
-					6: "16:9",
-					11: "fx uncropped",
-					12: "dx uncropped",
-					17: "1:1",
+					"1.3x": 1,
+					dx: 2,
+					"5:4": 3,
+					"3:2": 4,
+					"16:9": 6,
+					"fx uncropped": 11,
+					"dx uncropped": 12,
+					"1:1": 17,
 				} as const),
 			)
 			.field(
