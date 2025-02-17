@@ -13,6 +13,6 @@
 		"enabled": true
 	},
 	"files": {
-		"ignore": ["dist", "playground"]
+		"ignore": ["dist", "playground", "packages/libraw.wasm/src/libraw-types.ts"]
 	}
 }
