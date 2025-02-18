@@ -34,7 +34,7 @@
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
 	"devDependencies": {
 		"@types/node": "^20.6.4",
-		"typescript": "^5.0.2"
+		"typescript": "catalog:"
 	},
 	"dependencies": {
 		"typed-cstruct": "^0.10.2"

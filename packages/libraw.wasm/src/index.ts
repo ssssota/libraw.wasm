@@ -139,7 +139,7 @@ export class LibRaw implements Disposable {
 		this._status = "ready";
 		this.lr ||= LibRaw.module._libraw_init(0);
 	}
-	open(buffer: ArrayBuffer) {
+	open(buffer: ArrayBufferLike) {
 		// alloc memory
 		const dataPtr = LibRaw.module._malloc(buffer.byteLength);
 		const dataHeap = new Uint8Array(
