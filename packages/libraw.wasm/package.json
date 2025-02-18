@@ -33,7 +33,7 @@
 	},
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
 	"devDependencies": {
-		"@types/node": "^22.0.0",
+		"@types/node": "^22.13.4",
 		"typescript": "catalog:"
 	},
 	"dependencies": {
