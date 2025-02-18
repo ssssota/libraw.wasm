@@ -6,7 +6,7 @@
 	import { resolvable, type ResolvablePromise } from '$lib/resolvable';
 	import type { LibRaw } from 'libraw.wasm';
 
-	type LibRawReturn<T extends keyof LibRaw> = LibRaw[T] extends (...args: any[]) => infer R
+	type LibRawReturn<T extends keyof LibRaw> = LibRaw[T] extends (...args: unknown[]) => infer R
 		? R
 		: never;
 	let version = $state<string | undefined>();
