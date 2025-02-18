@@ -18,7 +18,6 @@ services:
       "-p", "@typed-cstruct/generator@0.4.0",
       "tcgen",
       "-h", "/src/LibRaw/libraw/libraw.h",
-      "--dump-rust-code",
       "--clang-args=\"--sysroot=/emsdk/upstream/emscripten/cache/wasm/sysroot\"",
       "--ignore-entities=va_list",
       "--ignore-entities=__gnuc_va_list",

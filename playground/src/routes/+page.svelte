@@ -4,12 +4,15 @@
 	import { createLibRaw } from '$lib/libraw';
 	import { readFile } from '$lib/read_file';
 	import { resolvable, type ResolvablePromise } from '$lib/resolvable';
-	import type { IParams, LibRaw } from 'libraw.wasm';
+	import type { LibRaw } from 'libraw.wasm';
 
+	type LibRawReturn<T extends keyof LibRaw> = LibRaw[T] extends (...args: any[]) => infer R
+		? R
+		: never;
 	let version = $state<string | undefined>();
-	let iparams = $state<ResolvablePromise<IParams> | undefined>();
+	let iparams = $state<ResolvablePromise<LibRawReturn<'getIParams'>> | undefined>();
 	let thumb = $state<ResolvablePromise<Uint8Array> | undefined>();
-	let raw = $state<ResolvablePromise<ReturnType<LibRaw['dcrawMakeMemImage']>> | undefined>();
+	let raw = $state<ResolvablePromise<LibRawReturn<'dcrawMakeMemImage'>> | undefined>();
 
 	const onFileChange = async (e: Event & { currentTarget: EventTarget & HTMLInputElement }) => {
 		const file = e.currentTarget.files?.[0];
@@ -19,6 +22,7 @@
 		raw = resolvable();
 		const libraw = createLibRaw();
 		await libraw.waitUntilReady();
+		libraw.cameraList().then(console.log, console.error);
 		version = await libraw.version();
 		try {
 			const arrayBuffer = await readFile(file);
