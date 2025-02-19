@@ -1,6 +1,7 @@
 import * as typ from "typed-cstruct";
 
 import {
+	libraw_data_t,
 	libraw_imgother_t,
 	libraw_iparams_t,
 	libraw_lensinfo_t,
@@ -22,94 +23,6 @@ import type {
 	LibRawWasmModule,
 } from "./types/index.js";
 
-type MutablePtr = { ptr: number };
-
-export type MakernotesLens = {
-	lensID: bigint;
-	lens: string;
-	lensFormat: number;
-	lensMount: number;
-	camID: bigint;
-	cameraFormat: number;
-	cameraMount: number;
-	body: string;
-	focalType: "unknown" | "fixed focal" | "zoom";
-	lensFeaturesPre: string;
-	lensFeaturesSuf: string;
-	minFocal: number;
-	maxFocal: number;
-	maxAp4MinFocal: number;
-	maxAp4MaxFocal: number;
-	minAp4MinFocal: number;
-	minAp4MaxFocal: number;
-	maxAp: number;
-	minAp: number;
-	curFocal: number;
-	curAp: number;
-	maxAp4CurFocal: number;
-	minAp4CurFocal: number;
-	minFocusDistance: number;
-	focusRangeIndex: number;
-	lensFStops: number;
-	teleconverterID: bigint;
-	teleconverter: string;
-	adapterID: bigint;
-	adapter: string;
-	attachmentID: bigint;
-	attachment: string;
-	focalUnits: number;
-	focalLengthIn35mmFormat: number;
-};
-export type ImgOther = {
-	isoSpeed: number;
-	shutter: number;
-	aperture: number;
-	focalLen: number;
-	timestamp: number;
-	shotOrder: number;
-	gpsdata: number[];
-	parsedGps: ParsedGps;
-	desc: string;
-	artist: string;
-	analogbalance: number[];
-};
-export type ParsedGps = {
-	latitude: [Deg: number, min: number, sec: number];
-	longitude: [Deg: number, min: number, sec: number];
-	gpstimestamp: [Deg: number, min: number, sec: number];
-	altitude: number;
-	altref: number;
-	latref: number;
-	longref: number;
-	gpsstatus: number;
-	gpsparsed: number;
-};
-export type Thumbnail = {
-	tformat: ThumbnailFormat;
-	twidth: number;
-	theight: number;
-	tlength: number;
-	tcolors: number;
-	thumb: Uint8Array;
-};
-export type ThumbnailFormat =
-	| "jpeg"
-	| "bitmap"
-	| "bitmap16"
-	| "layer"
-	| "rollei"
-	| "h265"
-	| "unknown";
-export type ProcessedImage = {
-	type: "jpeg" | "bitmap";
-	height: number;
-	width: number;
-	colors: number;
-	bits: number;
-	dataSize: number;
-	data: Uint8Array;
-};
-
 export class LibRaw implements Disposable {
 	private static modulePromise: Promise<LibRawWasmModule> | undefined;
 	private static module: LibRawWasmModule;
@@ -117,9 +30,6 @@ export class LibRaw implements Disposable {
 	private _status: "disposed" | "loading" | "ready" = "loading";
 	get status() {
 		return this._status;
-	}
-	private get view(): DataView {
-		return new DataView(LibRaw.module.HEAPU8.buffer);
 	}
 	constructor() {
 		this.setup();
@@ -175,7 +85,7 @@ export class LibRaw implements Disposable {
 	dcrawMakeMemImage() {
 		const errcPtr = LibRaw.module._malloc(4);
 		const ptr = LibRaw.module._libraw_dcraw_make_mem_image(this.lr, errcPtr);
-		const code = this.readI32({ ptr: errcPtr });
+		const _code = this.readI32(errcPtr);
 		LibRaw.module._free(errcPtr);
 		// this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
@@ -186,7 +96,7 @@ export class LibRaw implements Disposable {
 	dcrawMakeMemThumb() {
 		const errcPtr = LibRaw.module._malloc(4);
 		const ptr = LibRaw.module._libraw_dcraw_make_mem_thumb(this.lr, errcPtr);
-		const code = this.readI32({ ptr: errcPtr });
+		const code = this.readI32(errcPtr);
 		LibRaw.module._free(errcPtr);
 		this.handleError(code as ErrorCode);
 		if (!ptr) throw new Error("Unexpected error");
@@ -320,19 +230,7 @@ export class LibRaw implements Disposable {
 			.override("Teleconverter", typ.sizedCharArrayAsString(128))
 			.override("Adapter", typ.sizedCharArrayAsString(128))
 			.override("Attachment", typ.sizedCharArrayAsString(128));
-		/**
-		 * @see https://github.com/LibRaw/LibRaw/blob/cccb97647fcee56801fa68231fa8a38aa8b52ef7/libraw/libraw_types.h#L1018-L1026
-		 * ```c
-		 * typedef struct {
-		 *   float MinFocal, MaxFocal, MaxAp4MinFocal, MaxAp4MaxFocal, EXIF_MaxAp;
-		 *   char LensMake[128], Lens[128], LensSerial[128], InternalLensSerial[128];
-		 *   ushort FocalLengthIn35mmFormat;
-		 *   libraw_nikonlens_t nikon;
-		 *   libraw_dnglens_t dng;
-		 *   libraw_makernotes_lens_t makernotes;
-		 * } libraw_lensinfo_t;
-		 * ```
-		 */
+
 		return libraw_lensinfo_t()
 			.override("LensMake", typ.sizedCharArrayAsString(128))
 			.override("Lens", typ.sizedCharArrayAsString(128))
@@ -405,10 +303,8 @@ export class LibRaw implements Disposable {
 			.charPointerAsString()
 			.read({ buf: LibRaw.module.HEAPU8, offset: ptr }, {});
 	}
-	private readI32(ptr: MutablePtr): number {
-		const value = this.view.getInt32(ptr.ptr, true);
-		ptr.ptr += 4;
-		return value | 0;
+	private readI32(ptr: number): number {
+		return typ.readI32({ buf: LibRaw.module.HEAPU8, offset: ptr });
 	}
 	dispose() {
 		if (this._status === "disposed") return;
