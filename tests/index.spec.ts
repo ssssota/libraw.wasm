@@ -8,11 +8,11 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.join(__dirname, "..");
 const samplesDir = path.join(repoRoot, "raw-samples");
 
-it("supported cameras", async () => {
-	using libraw = new LibRaw();
-	await libraw.waitUntilReady();
-	const cameras = libraw.cameraList();
-	expect(cameras).toMatchSnapshot();
+it("meta", async () => {
+	await LibRaw.initialize();
+	expect(LibRaw.version()).toMatchInlineSnapshot(`"0.22.0-Devel202403"`);
+	expect(LibRaw.versionNumber()).toMatchInlineSnapshot("5632");
+	expect(LibRaw.cameraList()).toMatchSnapshot();
 });
 
 it("ARW", async () => {

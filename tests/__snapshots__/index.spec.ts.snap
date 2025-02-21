@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`supported cameras 1`] = `
+exports[`meta 3`] = `
 [
   "Adobe Digital Negative (DNG)",
   "AgfaPhoto DC-833m",

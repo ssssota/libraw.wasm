@@ -69,11 +69,11 @@ export interface LibRawWasmModule {
 	): LibRawProcessedImageT;
 	_libraw_dcraw_clear_mem(lr: LibRawProcessedImageT): void;
 	_libraw_strerror(error: ErrorCode): CharPtr;
-	_libraw_version(lr: LibRawDataT): CharPtr;
-	_libraw_versionNumber(lr: LibRawDataT): number;
-	_libraw_capabilities(lr: LibRawDataT): void;
-	_libraw_cameraCount(lr: LibRawDataT): number;
-	_libraw_cameraList(lr: LibRawDataT): CharPtrPtr;
+	_libraw_version(): CharPtr;
+	_libraw_versionNumber(): number;
+	_libraw_capabilities(): void;
+	_libraw_cameraCount(): number;
+	_libraw_cameraList(): CharPtrPtr;
 	_libraw_get_decoder_info(info: LibRawDecoderInfo): ErrorCode;
 	_libraw_unpack_function_name(lr: LibRawDataT): CharPtr;
 	_libraw_COLOR(lr: LibRawDataT, row: Int, col: Int): Int;

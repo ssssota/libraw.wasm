@@ -9,7 +9,6 @@
 	type LibRawReturn<T extends keyof LibRaw> = LibRaw[T] extends (...args: unknown[]) => infer R
 		? R
 		: never;
-	let version = $state<string | undefined>();
 	let iparams = $state<ResolvablePromise<LibRawReturn<'getIParams'>> | undefined>();
 	let thumb = $state<ResolvablePromise<Uint8Array> | undefined>();
 	let raw = $state<ResolvablePromise<LibRawReturn<'dcrawMakeMemImage'>> | undefined>();
@@ -22,8 +21,6 @@
 		raw = resolvable();
 		const libraw = createLibRaw();
 		await libraw.waitUntilReady();
-		libraw.cameraList().then(console.log, console.error);
-		version = await libraw.version();
 		try {
 			const arrayBuffer = await readFile(file);
 			await libraw.open(arrayBuffer);
@@ -49,9 +46,6 @@
 	};
 </script>
 
-{#if version}
-	<p>libraw version: {version}</p>
-{/if}
 <input type="file" onchange={onFileChange} />
 {#if iparams}
 	{#await iparams}

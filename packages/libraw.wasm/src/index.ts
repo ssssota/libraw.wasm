@@ -40,6 +40,7 @@ export class LibRaw implements Disposable {
 			LibRaw.modulePromise = mod;
 			LibRaw.module = await mod;
 		}
+		return await LibRaw.modulePromise;
 	}
 	async waitUntilReady() {
 		await LibRaw.modulePromise;
@@ -170,18 +171,25 @@ export class LibRaw implements Disposable {
 	setFbddNoiserd(value: Int) {
 		LibRaw.module._libraw_set_fbdd_noiserd(this.lr, value);
 	}
-	version(): string {
-		return this.readString(LibRaw.module._libraw_version(this.lr));
+	static version(): string {
+		if (LibRaw.module === undefined) throw new Error("Not initialized");
+		const ptr = LibRaw.module._libraw_version();
+		return typ
+			.sizedCharArrayAsString(Number.POSITIVE_INFINITY)
+			.read({ buf: LibRaw.module.HEAPU8, offset: ptr }, {});
 	}
-	versionNumber(): number {
-		return LibRaw.module._libraw_versionNumber(this.lr);
+	static versionNumber(): number {
+		if (LibRaw.module === undefined) throw new Error("Not initialized");
+		return LibRaw.module._libraw_versionNumber();
 	}
-	cameraCount(): number {
-		return LibRaw.module._libraw_cameraCount(this.lr);
+	static cameraCount(): number {
+		if (LibRaw.module === undefined) throw new Error("Not initialized");
+		return LibRaw.module._libraw_cameraCount();
 	}
-	cameraList(): string[] {
-		const ptr = LibRaw.module._libraw_cameraList(this.lr);
-		const length = this.cameraCount();
+	static cameraList(): string[] {
+		if (LibRaw.module === undefined) throw new Error("Not initialized");
+		const ptr = LibRaw.module._libraw_cameraList();
+		const length = LibRaw.cameraCount();
 		return typ
 			.sizedArray(typ.charPointerAsString(), length)
 			.read({ buf: LibRaw.module.HEAPU8, offset: ptr }, {});
