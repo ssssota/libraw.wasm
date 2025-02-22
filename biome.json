@@ -17,6 +17,7 @@
 			"dist",
 			"*.svelte",
 			"playground/.svelte-kit",
+			"playground/build",
 			"packages/libraw.wasm/src/libraw-types.ts"
 		]
 	}
