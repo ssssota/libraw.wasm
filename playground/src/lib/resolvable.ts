@@ -1,7 +1,6 @@
 export type ResolvablePromise<T> = Promise<T> & {
 	resolve(value: T): void;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	reject(reason: any): void;
+	reject(reason: unknown): void;
 };
 
 export function resolvable<T>(): ResolvablePromise<T> {
@@ -11,7 +10,9 @@ export function resolvable<T>(): ResolvablePromise<T> {
 		resolve = res;
 		reject = rej;
 	}) as ResolvablePromise<T>;
+	// biome-ignore lint/style/noNonNullAssertion:
 	promise.resolve = resolve!;
+	// biome-ignore lint/style/noNonNullAssertion:
 	promise.reject = reject!;
 	return promise;
 }
