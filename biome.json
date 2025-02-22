@@ -13,6 +13,6 @@
 		"enabled": true
 	},
 	"files": {
-		"ignore": ["dist", "playground", "packages/libraw.wasm/src/libraw-types.ts"]
+		"ignore": ["dist", "*.svelte", "packages/libraw.wasm/src/libraw-types.ts"]
 	}
 }

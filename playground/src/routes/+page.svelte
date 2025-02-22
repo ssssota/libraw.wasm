@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Bitmap from '$lib/Bitmap.svelte';
 	import Jpeg from '$lib/Jpeg.svelte';
-	import { createLibRaw } from '$lib/libraw';
+	import { createLoader } from '$lib/loader';
 	import { readFile } from '$lib/read_file';
 	import { resolvable, type ResolvablePromise } from '$lib/resolvable';
 	import type { LibRaw } from 'libraw.wasm';
@@ -19,29 +19,26 @@
 		iparams = resolvable();
 		thumb = resolvable();
 		raw = resolvable();
-		const libraw = createLibRaw();
-		await libraw.waitUntilReady();
+		const libraw = createLoader();
+		libraw.meta().then(console.log);
 		try {
 			const arrayBuffer = await readFile(file);
-			await libraw.open(arrayBuffer);
-			libraw.getIParams().then(iparams.resolve, iparams.reject);
+			const info = await libraw.load(arrayBuffer);
+			iparams.resolve(info.iparams);
 
-			await libraw.unpackThumb().catch(thumb.reject);
-			const thumbnail = await libraw.dcrawMakeMemThumb().catch(thumb.reject);
+			const thumbnail = await libraw.thumbnail();
 			if (thumbnail?.type_ === 'LIBRAW_IMAGE_JPEG') {
 				const buf = new Uint8Array(thumbnail.data);
 				thumb.resolve(buf);
 			}
-			await libraw.unpack().catch(raw.reject);
-			await libraw.dcrawProcess().catch(raw.reject);
-			await libraw.dcrawMakeMemImage().then(raw.resolve, raw.reject);
+			await libraw.raw().then(raw.resolve, raw.reject);
 		} catch (error) {
 			console.error(error);
 			iparams.reject(error);
 			thumb.reject(error);
 			raw.reject(error);
 		} finally {
-			await libraw.dispose();
+			libraw.dispose();
 		}
 	};
 </script>
