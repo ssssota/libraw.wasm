@@ -14,8 +14,9 @@
 		}
 	},
 	"scripts": {
-		"build": "pnpm run \"/^build:.*/\"",
+		"build": "pnpm build:wasm && pnpm build:bindings && pnpm build:ts",
 		"build:wasm": "node scripts/build.mjs",
+		"build:bindings": "node scripts/bindings.mjs",
 		"build:ts": "tsc",
 		"watch": "pnpm run \"/^watch:.*/\"",
 		"watch:ts": "tsc -w"
@@ -33,6 +34,7 @@
 	},
 	"homepage": "https://github.com/ssssota/libraw.wasm#readme",
 	"devDependencies": {
+		"@typed-cstruct/generator": "^0.5.0",
 		"@types/node": "^22.13.4",
 		"typescript": "catalog:"
 	},

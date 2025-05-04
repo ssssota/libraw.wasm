@@ -14,6 +14,9 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/actions/setup
+        id: setup
       - run: pnpm build
+        env:
+          SYSROOT: ${{ steps.setup.outputs.emscripten }}/cache/sysroot
       - run: pnpm check
       - run: pnpm test

@@ -27,6 +27,9 @@ importers:
         specifier: ^0.10.2
         version: 0.10.2
     devDependencies:
+      '@typed-cstruct/generator':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@types/node':
         specifier: ^22.13.4
         version: 22.13.4
@@ -531,6 +534,71 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
       vite: ^6.0.0
+
+  '@typed-cstruct/generator-darwin-arm64@0.5.0':
+    resolution: {integrity: sha512-vOUXoVoIBoDq8zB8EBnBVsBh0cng2+USvYvsJma5+8cNPXh/fROikv3PiVA6sQF5gnJxcTGUQBIY0DxslGyMsg==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typed-cstruct/generator-darwin-x64@0.5.0':
+    resolution: {integrity: sha512-Rih+VS7Jpod4Dqm6SSkZGP4IzQLSQFN27efz7CHqxpIHIArWtIZmqFms2xagxQgQA3z+qzl7BJzGPtKCvrGugQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typed-cstruct/generator-linux-arm-gnueabihf@0.5.0':
+    resolution: {integrity: sha512-zo2myO2Y7HdZsEffeJI4u68ANYDCnQoPF2S8IXofKLgc0G/N1elCW71dnXCApRtW/KeExkWc74MmdUFYKeoMJA==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+
+  '@typed-cstruct/generator-linux-arm64-gnu@0.5.0':
+    resolution: {integrity: sha512-JTPg4DsqdchLl85eR8SJuWHmOesn82s+8z3QMX4jh/ml1Q2W1hq4Rut4DZc88XN90QyyXJvPxbIHFJbe4qoM2w==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typed-cstruct/generator-linux-arm64-musl@0.5.0':
+    resolution: {integrity: sha512-JsisMUQBsGwWclmtaFrCLU6dQHHLgSwv5cr8PPeR0cgYTAZK2GdccdJvXuJmS7M53pGK4fsfSYAc8Ll8mp3qDw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typed-cstruct/generator-linux-x64-gnu@0.5.0':
+    resolution: {integrity: sha512-agAwKLQZqkHoJSGPGM7v2lt5BZ9FZimI30DIO2JY1/0uPMOIHUtyFXiORuZQ7MrcXa5hwXjMLUN4JYTP9zE86Q==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@typed-cstruct/generator-linux-x64-musl@0.5.0':
+    resolution: {integrity: sha512-01DS2V7K0+qTwCeyS/SSDIVH6onEpSPDQVsMTkgjoNZ+eJx5gIGIp8yqiOMuHgcwUtzk6pVFFHAH+h9pRwMDpw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@typed-cstruct/generator-win32-arm64-msvc@0.5.0':
+    resolution: {integrity: sha512-hGFoLRSNL5d12KdIagcoLbBbDncYM29pjngMBerf+9M9AjgsNKoB+j7dXkjLdqSKrkOfVxwlQIeQd2HCf4P0DA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typed-cstruct/generator-win32-ia32-msvc@0.5.0':
+    resolution: {integrity: sha512-/U56L4ZmYIsfuj0jBxewqkZlrwssKDCqTKmj8wWW9ukE5PdyeRGPUP+skacfjhSzig6ez5gxggUe4Oduyjvoog==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@typed-cstruct/generator-win32-x64-msvc@0.5.0':
+    resolution: {integrity: sha512-kx8Dl15dG7khgX2F/0FucMqTPmIunX/a6/j8XyJ3RrIPaimb4bhIdoHfgMi/qD0YUi+REHdX/6OOfkvkvfXfsA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@typed-cstruct/generator@0.5.0':
+    resolution: {integrity: sha512-6M9LlRD9SQHhC7CqHj0b6FQ3ry53vhPQGgt4+Zy4W8jugBshWb98HrvRIygPH/VOqTu8YCFCo2nLyZ+OOnZ9Fw==}
+    engines: {node: '>= 10'}
+    hasBin: true
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1725,6 +1793,49 @@ snapshots:
       vitefu: 1.0.5(vite@6.1.1(@types/node@22.13.4))
     transitivePeerDependencies:
       - supports-color
+
+  '@typed-cstruct/generator-darwin-arm64@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-darwin-x64@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-linux-arm-gnueabihf@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-linux-arm64-gnu@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-linux-arm64-musl@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-linux-x64-gnu@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-linux-x64-musl@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-win32-arm64-msvc@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-win32-ia32-msvc@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator-win32-x64-msvc@0.5.0':
+    optional: true
+
+  '@typed-cstruct/generator@0.5.0':
+    optionalDependencies:
+      '@typed-cstruct/generator-darwin-arm64': 0.5.0
+      '@typed-cstruct/generator-darwin-x64': 0.5.0
+      '@typed-cstruct/generator-linux-arm-gnueabihf': 0.5.0
+      '@typed-cstruct/generator-linux-arm64-gnu': 0.5.0
+      '@typed-cstruct/generator-linux-arm64-musl': 0.5.0
+      '@typed-cstruct/generator-linux-x64-gnu': 0.5.0
+      '@typed-cstruct/generator-linux-x64-musl': 0.5.0
+      '@typed-cstruct/generator-win32-arm64-msvc': 0.5.0
+      '@typed-cstruct/generator-win32-ia32-msvc': 0.5.0
+      '@typed-cstruct/generator-win32-x64-msvc': 0.5.0
 
   '@types/cookie@0.6.0': {}
 
