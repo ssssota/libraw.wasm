@@ -4,7 +4,7 @@ inputs:
   node-version:
     description: Node.js version to use
     required: false
-    default: latest
+    default: "22"
   emscripten-version:
     description: Emscripten version to use
     required: false
