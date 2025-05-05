@@ -18,7 +18,10 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/actions/setup
+        id: setup
       - run: pnpm build
+        env:
+          SYSROOT: ${{ steps.setup.outputs.emscripten }}/cache/sysroot
       - uses: actions/upload-pages-artifact@v3
         with:
           path: playground/build
