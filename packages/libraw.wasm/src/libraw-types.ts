@@ -5,7 +5,9 @@ export function INT64() {
 export function LibRaw_image_formats() {
   return __typ.enumLike(__typ.u32, {
     LIBRAW_IMAGE_BITMAP: 2,
+    LIBRAW_IMAGE_H265: 4,
     LIBRAW_IMAGE_JPEG: 1,
+    LIBRAW_IMAGE_JPEGXL: 3,
   })
 }
 export function LibRaw_internal_thumbnail_formats() {
@@ -108,7 +110,7 @@ export function libraw_colordata_t() {
     .field('black', __typ.u32)
     .field('data_maximum', __typ.u32)
     .field('maximum', __typ.u32)
-    .field('linear_max', __typ.sizedArray(__typ.i64,4))
+    .field('linear_max', __typ.sizedArray(__typ.u32,4))
     .field('fmaximum', __typ.f32)
     .field('fnorm', __typ.f32)
     .field('white', __typ.sizedArray(__typ.sizedArray(ushort(),8),8))
@@ -486,6 +488,12 @@ export function libraw_nikon_makernotes_t() {
     .field('PictureControlName', __typ.sizedArray(__typ.u8,20))
     .field('PictureControlBase', __typ.sizedArray(__typ.u8,20))
     .field('ShotInfoVersion', __typ.u32)
+    .field('ShotInfoFirmware', __typ.sizedArray(__typ.u8,9))
+    .field('BurstTable_0x0056_len', __typ.u32)
+    .field('BurstTable_0x0056', __typ.ptr(uchar()))
+    .field('BurstTable_0x0056_ver', ushort())
+    .field('BurstTable_0x0056_gid', ushort())
+    .field('BurstTable_0x0056_fnum', uchar())
     .field('MakernotesFlip', __typ.i16)
     .field('RollAngle', __typ.f64)
     .field('PitchAngle', __typ.f64)
@@ -503,6 +511,20 @@ export function libraw_olympus_makernotes_t() {
   return new __typ.Struct()
     .field('CameraType2', __typ.sizedArray(__typ.u8,6))
     .field('ValidBits', ushort())
+    .field('tagX640', __typ.u32)
+    .field('tagX641', __typ.u32)
+    .field('tagX642', __typ.u32)
+    .field('tagX643', __typ.u32)
+    .field('tagX644', __typ.u32)
+    .field('tagX645', __typ.u32)
+    .field('tagX646', __typ.u32)
+    .field('tagX647', __typ.u32)
+    .field('tagX648', __typ.u32)
+    .field('tagX649', __typ.u32)
+    .field('tagX650', __typ.u32)
+    .field('tagX651', __typ.u32)
+    .field('tagX652', __typ.u32)
+    .field('tagX653', __typ.u32)
     .field('SensorCalibration', __typ.sizedArray(__typ.i32,2))
     .field('DriveMode', __typ.sizedArray(ushort(),5))
     .field('ColorSpace', ushort())
@@ -600,6 +622,7 @@ export function libraw_pentax_makernotes_t() {
     .field('AFPointsInFocus_version', __typ.i32)
     .field('AFPointsInFocus', __typ.u32)
     .field('FocusPosition', ushort())
+    .field('DynamicRangeExpansion', __typ.sizedArray(uchar(),4))
     .field('AFAdjustment', __typ.i16)
     .field('AFPointMode', uchar())
     .field('MultiExposure', uchar())

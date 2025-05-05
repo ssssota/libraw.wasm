@@ -9,6 +9,13 @@ inputs:
     description: Emscripten version to use
     required: false
     default: "4.0.6"
+outputs:
+  emsdk:
+    value: ${{ steps.emscripten.outputs.EMSDK }}
+    description: Path to the emsdk directory
+  emscripten:
+    value: ${{ steps.emscripten.outputs.EMSCRIPTEN }}
+    description: Path to the emscripten directory
 runs:
   using: composite
   steps:
@@ -21,6 +28,7 @@ runs:
       shell: bash
       run: corepack enable && pnpm install
     - name: Install emscripten
+      id: emscripten
       shell: bash
       run: |
         cd
@@ -31,5 +39,7 @@ runs:
         source ./emsdk_env.sh
         echo "$HOME/emsdk" >> $GITHUB_PATH
         echo "$HOME/emsdk/upstream/emscripten" >> $GITHUB_PATH
+        echo "EMSDK=$HOME/emsdk" >> "$GITHUB_OUTPUT"
+        echo "EMSCRIPTEN=$HOME/emsdk/upstream/emscripten" >> "$GITHUB_OUTPUT"
       env:
         EMSCRIPTEN_VERSION: ${{ inputs.emscripten-version }}

@@ -10,7 +10,7 @@ const samplesDir = path.join(repoRoot, "raw-samples");
 
 it("meta", async () => {
 	await LibRaw.initialize();
-	expect(LibRaw.version()).toMatchInlineSnapshot(`"0.22.0-Devel202403"`);
+	expect(LibRaw.version()).toMatchInlineSnapshot(`"0.22.0-Devel202502"`);
 	expect(LibRaw.versionNumber()).toMatchInlineSnapshot("5632");
 	expect(LibRaw.cameraList()).toMatchSnapshot();
 });
