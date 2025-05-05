@@ -43,3 +43,8 @@ runs:
         echo "EMSCRIPTEN=$HOME/emsdk/upstream/emscripten" >> "$GITHUB_OUTPUT"
       env:
         EMSCRIPTEN_VERSION: ${{ inputs.emscripten-version }}
+    - name: Build
+      shell: bash
+      run: pnpm build
+      env:
+        SYSROOT: ${{ steps.emscripten.outputs.EMSCRIPTEN }}/cache/sysroot
