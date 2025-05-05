@@ -4,11 +4,11 @@ inputs:
   node-version:
     description: Node.js version to use
     required: false
-    default: latest
+    default: "22"
   emscripten-version:
     description: Emscripten version to use
     required: false
-    default: "4.0.6"
+    default: "4.0.8"
 outputs:
   emsdk:
     value: ${{ steps.emscripten.outputs.EMSDK }}

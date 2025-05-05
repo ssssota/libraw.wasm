@@ -167,9 +167,9 @@ async function main() {
 all: lib/libraw.wasm
 ${patchedMakefile}
 lib/libraw.wasm: \${LIB_OBJECTS}
-	$\{CC} -Os -o lib/libraw.mjs -s MODULARIZE=1 -s 'EXPORTED_FUNCTIONS=${JSON.stringify(
+	$\{CC} -Os -o lib/libraw.mjs -s MODULARIZE=1 -s EXPORTED_RUNTIME_METHODS=HEAPU8 -s ALLOW_MEMORY_GROWTH=1 -s 'EXPORTED_FUNCTIONS=${JSON.stringify(
 		exportFunctions,
-	)}' -s ALLOW_MEMORY_GROWTH=1 \${LIB_OBJECTS}
+	)}' \${LIB_OBJECTS}
 `;
 
 	await fs.writeFile(path.join(cwd, "LibRaw/Makefile"), makefile);

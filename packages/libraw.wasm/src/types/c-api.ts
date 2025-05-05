@@ -99,12 +99,5 @@ export interface LibRawWasmModule {
 	_libraw_get_ricoh_makernotes(lr: LibRawDataT): number;
 	_libraw_get_samsung_makernotes(lr: LibRawDataT): number;
 	_libraw_get_common_metadata(lr: LibRawDataT): number;
-	HEAP8: Int8Array;
-	HEAP16: Int16Array;
-	HEAP32: Int32Array;
-	HEAPF32: Float32Array;
-	HEAPF64: Float64Array;
 	HEAPU8: Uint8Array;
-	HEAPU16: Uint16Array;
-	HEAPU32: Uint32Array;
 }
