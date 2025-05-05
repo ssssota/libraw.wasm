@@ -13,10 +13,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: ./.github/actions/setup
-        id: setup
-      - run: pnpm build
-        env:
-          SYSROOT: ${{ steps.setup.outputs.emscripten }}/cache/sysroot
+      - uses: ./.github/actions/setup-build
       - run: pnpm check
       - run: pnpm test
