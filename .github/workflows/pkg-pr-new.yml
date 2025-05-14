@@ -1,0 +1,17 @@
+name: Release to pkg.pr.new
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+      - run: npx pkg-pr-new publish './packages/*'
