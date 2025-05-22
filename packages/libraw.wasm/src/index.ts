@@ -1,7 +1,6 @@
 import * as typ from "typed-cstruct";
 
 import {
-	libraw_data_t,
 	libraw_imgother_t,
 	libraw_iparams_t,
 	libraw_lensinfo_t,
@@ -34,13 +33,27 @@ export class LibRaw implements Disposable {
 	constructor() {
 		this.setup();
 	}
-	static async initialize() {
+	static async initialize(wasm?: Response | ArrayBuffer) {
 		if (LibRaw.modulePromise === undefined) {
-			const mod: Promise<LibRawWasmModule> = initializeLibRawWasm();
+			const mod: Promise<LibRawWasmModule> = initializeLibRawWasm({
+				instantiateWasm: LibRaw.createInstantiateWasm(wasm),
+			});
 			LibRaw.modulePromise = mod;
 			LibRaw.module = await mod;
 		}
 		return await LibRaw.modulePromise;
+	}
+	private static createInstantiateWasm(wasm?: Response | ArrayBuffer) {
+		if (wasm === undefined) return undefined;
+		return async (
+			importObject: WebAssembly.Imports,
+			cb: (instance: WebAssembly.Instance, module: WebAssembly.Module) => void,
+		) => {
+			const instantiated = await (wasm instanceof Response
+				? WebAssembly.instantiateStreaming(wasm, importObject)
+				: WebAssembly.instantiate(wasm, importObject));
+			cb(instantiated.instance, instantiated.module);
+		};
 	}
 	async waitUntilReady() {
 		await LibRaw.modulePromise;
