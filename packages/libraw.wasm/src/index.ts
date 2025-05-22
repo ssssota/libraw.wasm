@@ -22,6 +22,9 @@ import type {
 	LibRawWasmModule,
 } from "./types/index.js";
 
+type PromiseOr<T> = T | Promise<T>;
+type WasmInput = PromiseOr<Response | ArrayBuffer>;
+
 export class LibRaw implements Disposable {
 	private static modulePromise: Promise<LibRawWasmModule> | undefined;
 	private static module: LibRawWasmModule;
@@ -33,7 +36,7 @@ export class LibRaw implements Disposable {
 	constructor() {
 		this.setup();
 	}
-	static async initialize(wasm?: Response | ArrayBuffer) {
+	static async initialize(wasm?: WasmInput) {
 		if (LibRaw.modulePromise === undefined) {
 			const mod: Promise<LibRawWasmModule> = initializeLibRawWasm({
 				instantiateWasm: LibRaw.createInstantiateWasm(wasm),
@@ -43,15 +46,16 @@ export class LibRaw implements Disposable {
 		}
 		return await LibRaw.modulePromise;
 	}
-	private static createInstantiateWasm(wasm?: Response | ArrayBuffer) {
+	private static createInstantiateWasm(wasm?: WasmInput) {
 		if (wasm === undefined) return undefined;
 		return async (
 			importObject: WebAssembly.Imports,
 			cb: (instance: WebAssembly.Instance, module: WebAssembly.Module) => void,
 		) => {
-			const instantiated = await (wasm instanceof Response
-				? WebAssembly.instantiateStreaming(wasm, importObject)
-				: WebAssembly.instantiate(wasm, importObject));
+			const wasmResponse = await wasm;
+			const instantiated = await (wasmResponse instanceof Response
+				? WebAssembly.instantiateStreaming(wasmResponse, importObject)
+				: WebAssembly.instantiate(wasmResponse, importObject));
 			cb(instantiated.instance, instantiated.module);
 		};
 	}
