@@ -39,6 +39,6 @@
 		"typescript": "catalog:"
 	},
 	"dependencies": {
-		"typed-cstruct": "^0.10.2"
+		"typed-cstruct": "^0.11.0"
 	}
 }
