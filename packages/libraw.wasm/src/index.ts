@@ -25,6 +25,56 @@ import type {
 type PromiseOr<T> = T | Promise<T>;
 type WasmInput = PromiseOr<Response | ArrayBuffer>;
 
+const imgother_t = libraw_imgother_t()
+	.override("desc", typ.sizedCharArrayAsString(512))
+	.override("artist", typ.sizedCharArrayAsString(64));
+const iparams_t = libraw_iparams_t()
+	.override("make", typ.sizedCharArrayAsString(64))
+	.override("model", typ.sizedCharArrayAsString(64))
+	.override("software", typ.sizedCharArrayAsString(64))
+	.override("normalized_make", typ.sizedCharArrayAsString(64))
+	.override("normalized_model", typ.sizedCharArrayAsString(64))
+	.override("cdesc", typ.sizedCharArrayAsString(5))
+	.override("xmpdata", typ.charPointerAsString());
+const makernotes_lens_t = libraw_makernotes_lens_t()
+	.override("Lens", typ.sizedCharArrayAsString(128))
+	.override("body", typ.sizedCharArrayAsString(64))
+	.override(
+		"FocalType",
+		typ.enumLike(typ.i16, {
+			unknown: 0,
+			"fixed focal": 1,
+			zoom: 2,
+		} as const),
+	)
+	.override("LensFeatures_pre", typ.sizedCharArrayAsString(16))
+	.override("LensFeatures_suf", typ.sizedCharArrayAsString(16))
+	.override("Teleconverter", typ.sizedCharArrayAsString(128))
+	.override("Adapter", typ.sizedCharArrayAsString(128))
+	.override("Attachment", typ.sizedCharArrayAsString(128));
+const lensinfo_t = libraw_lensinfo_t()
+	.override("LensMake", typ.sizedCharArrayAsString(128))
+	.override("Lens", typ.sizedCharArrayAsString(128))
+	.override("LensSerial", typ.sizedCharArrayAsString(128))
+	.override("InternalLensSerial", typ.sizedCharArrayAsString(128))
+	.override("makernotes", makernotes_lens_t);
+const processed_image_t = libraw_processed_image_t().override("data", {
+	size: 1,
+	read(opts, ctx) {
+		const offset = opts.offset ?? 0;
+		const size = ctx.data_size;
+		return opts.buf.slice(offset, offset + size);
+	},
+});
+const shootinginfo_t = libraw_shootinginfo_t()
+	.override("BodySerial", typ.sizedCharArrayAsString(64))
+	.override("InternalBodySerial", typ.sizedCharArrayAsString(64));
+const makernotes_t = libraw_makernotes_t();
+const thumbnail_t = libraw_thumbnail_t().override(
+	"thumb",
+	typ.pointerArrayFromLengthField(typ.u8, "tlength"),
+);
+
 export class LibRaw implements Disposable {
 	private static modulePromise: Promise<LibRawWasmModule> | undefined;
 	private static module: LibRawWasmModule;
@@ -123,16 +173,10 @@ export class LibRaw implements Disposable {
 		return ret;
 	}
 	private readProcessedImage(processed: LibRawProcessedImageT) {
-		return libraw_processed_image_t()
-			.override("data", {
-				size: 1,
-				read(opts, ctx) {
-					const offset = opts.offset ?? 0;
-					const size = ctx.data_size;
-					return opts.buf.slice(offset, offset + size);
-				},
-			})
-			.read({ buf: LibRaw.module.HEAPU8, offset: processed });
+		return processed_image_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: processed,
+		});
 	}
 	getRawHeight() {
 		return LibRaw.module._libraw_get_raw_height(this.lr);
@@ -225,56 +269,22 @@ export class LibRaw implements Disposable {
 		return new Uint16Array(LibRaw.module.HEAPU8.buffer, ptr);
 	}
 	getIParams() {
-		return libraw_iparams_t()
-			.override("make", typ.sizedCharArrayAsString(64))
-			.override("model", typ.sizedCharArrayAsString(64))
-			.override("software", typ.sizedCharArrayAsString(64))
-			.override("normalized_make", typ.sizedCharArrayAsString(64))
-			.override("normalized_model", typ.sizedCharArrayAsString(64))
-			.override("cdesc", typ.sizedCharArrayAsString(5))
-			.override("xmpdata", typ.charPointerAsString())
-			.read({
-				buf: LibRaw.module.HEAPU8,
-				offset: LibRaw.module._libraw_get_iparams(this.lr),
-			});
+		return iparams_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: LibRaw.module._libraw_get_iparams(this.lr),
+		});
 	}
 	getLensInfo() {
-		const makernotes = libraw_makernotes_lens_t()
-			.override("Lens", typ.sizedCharArrayAsString(128))
-			.override("body", typ.sizedCharArrayAsString(64))
-			.override(
-				"FocalType",
-				typ.enumLike(typ.i16, {
-					unknown: 0,
-					"fixed focal": 1,
-					zoom: 2,
-				} as const),
-			)
-			.override("LensFeatures_pre", typ.sizedCharArrayAsString(16))
-			.override("LensFeatures_suf", typ.sizedCharArrayAsString(16))
-			.override("Teleconverter", typ.sizedCharArrayAsString(128))
-			.override("Adapter", typ.sizedCharArrayAsString(128))
-			.override("Attachment", typ.sizedCharArrayAsString(128));
-
-		return libraw_lensinfo_t()
-			.override("LensMake", typ.sizedCharArrayAsString(128))
-			.override("Lens", typ.sizedCharArrayAsString(128))
-			.override("LensSerial", typ.sizedCharArrayAsString(128))
-			.override("InternalLensSerial", typ.sizedCharArrayAsString(128))
-			.override("makernotes", makernotes)
-			.read({
-				buf: LibRaw.module.HEAPU8,
-				offset: LibRaw.module._libraw_get_lensinfo(this.lr),
-			});
+		return lensinfo_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: LibRaw.module._libraw_get_lensinfo(this.lr),
+		});
 	}
 	getImgOther() {
-		return libraw_imgother_t()
-			.override("desc", typ.sizedCharArrayAsString(512))
-			.override("artist", typ.sizedCharArrayAsString(64))
-			.read({
-				buf: LibRaw.module.HEAPU8,
-				offset: LibRaw.module._libraw_get_imgother(this.lr),
-			});
+		return imgother_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: LibRaw.module._libraw_get_imgother(this.lr),
+		});
 	}
 	// getDecoderInfo() {
 	// 	/**
@@ -297,24 +307,19 @@ export class LibRaw implements Disposable {
 	// 	};
 	// }
 	getThumbnail() {
-		return libraw_thumbnail_t()
-			.override("thumb", typ.pointerArrayFromLengthField(typ.u8, "tlength"))
-			.read({
-				buf: LibRaw.module.HEAPU8,
-				offset: LibRaw.module._libraw_get_thumbnail(this.lr),
-			});
+		return thumbnail_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: LibRaw.module._libraw_get_thumbnail(this.lr),
+		});
 	}
 	getShootingInfo() {
-		return libraw_shootinginfo_t()
-			.override("BodySerial", typ.sizedCharArrayAsString(64))
-			.override("InternalBodySerial", typ.sizedCharArrayAsString(64))
-			.read({
-				buf: LibRaw.module.HEAPU8,
-				offset: LibRaw.module._libraw_get_shootinginfo(this.lr),
-			});
+		return shootinginfo_t.read({
+			buf: LibRaw.module.HEAPU8,
+			offset: LibRaw.module._libraw_get_shootinginfo(this.lr),
+		});
 	}
 	getMakernotes() {
-		return libraw_makernotes_t().read({
+		return makernotes_t.read({
 			buf: LibRaw.module.HEAPU8,
 			offset: LibRaw.module._libraw_get_makernotes(this.lr),
 		});
