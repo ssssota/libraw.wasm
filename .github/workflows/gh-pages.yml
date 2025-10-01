@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/actions/setup-build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: playground/build
 
